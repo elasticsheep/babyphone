@@ -1,0 +1,305 @@
+   1               		.file	"wavparser.c"
+   2               	__SREG__ = 0x3f
+   3               	__SP_H__ = 0x3e
+   4               	__SP_L__ = 0x3d
+   5               	__CCP__  = 0x34
+   6               	__tmp_reg__ = 0
+   7               	__zero_reg__ = 1
+  15               	.Ltext0:
+  16               		.data
+  17               	.LC0:
+  18 0000 5249 4646 		.string	"RIFF"
+  18      00
+  19               	.LC1:
+  20 0005 5741 5645 		.string	"WAVE"
+  20      00
+  21               	.LC2:
+  22 000a 666D 7420 		.string	"fmt "
+  22      00
+  23               	.LC3:
+  24 000f 6461 7461 		.string	"data"
+  24      00
+  25               		.text
+  26               	.global	wavparser_parse_header
+  28               	wavparser_parse_header:
+  29               	.LFB3:
+  30               	.LM1:
+  31               	.LVL0:
+  32 0000 8F92      		push r8
+  33 0002 9F92      		push r9
+  34 0004 AF92      		push r10
+  35 0006 BF92      		push r11
+  36 0008 CF92      		push r12
+  37 000a DF92      		push r13
+  38 000c EF92      		push r14
+  39 000e FF92      		push r15
+  40 0010 0F93      		push r16
+  41 0012 1F93      		push r17
+  42 0014 DF93      		push r29
+  43 0016 CF93      		push r28
+  44 0018 CDB7      		in r28,__SP_L__
+  45 001a DEB7      		in r29,__SP_H__
+  46 001c 2F97      		sbiw r28,15
+  47 001e 0FB6      		in __tmp_reg__,__SREG__
+  48 0020 F894      		cli
+  49 0022 DEBF      		out __SP_H__,r29
+  50 0024 0FBE      		out __SREG__,__tmp_reg__
+  51 0026 CDBF      		out __SP_L__,r28
+  52               	/* prologue: function */
+  53               	/* frame size = 15 */
+  54 0028 8C01      		movw r16,r24
+  55 002a 5B01      		movw r10,r22
+  56               	.LM2:
+  57 002c 6115      		cp r22,__zero_reg__
+  58 002e 7105      		cpc r23,__zero_reg__
+  59 0030 01F4      		brne .L2
+  60               	.LVL1:
+  61 0032 81E0      		ldi r24,lo8(1)
+  62 0034 00C0      		rjmp .L3
+  63               	.LVL2:
+  64               	.L2:
+  65               	.LM3:
+  66 0036 1F82      		std Y+7,__zero_reg__
+  67 0038 1886      		std Y+8,__zero_reg__
+  68 003a 1986      		std Y+9,__zero_reg__
+  69 003c 1A86      		std Y+10,__zero_reg__
+  70               	.LVL3:
+  71               	.LM4:
+  72 003e 9BE0      		ldi r25,lo8(11)
+  73 0040 C92E      		mov r12,r25
+  74 0042 D12C      		mov r13,__zero_reg__
+  75 0044 CC0E      		add r12,r28
+  76 0046 DD1E      		adc r13,r29
+  77 0048 85E0      		ldi r24,lo8(5)
+  78 004a F601      		movw r30,r12
+  79 004c 1192      		st Z+,__zero_reg__
+  80 004e 8A95      	        dec r24
+  81 0050 01F4      		brne .-6
+  82               	.LM5:
+  83 0052 C801      		movw r24,r16
+  84 0054 BE01      		movw r22,r28
+  85               	.LVL4:
+  86 0056 695F      		subi r22,lo8(-(7))
+  87 0058 7F4F      		sbci r23,hi8(-(7))
+  88 005a 40E0      		ldi r20,lo8(0)
+  89 005c 0E94 0000 		call fat_seek_file
+  90               	.LM6:
+  91 0060 C801      		movw r24,r16
+  92 0062 B601      		movw r22,r12
+  93 0064 44E0      		ldi r20,lo8(4)
+  94 0066 50E0      		ldi r21,hi8(4)
+  95 0068 0E94 0000 		call fat_read_file
+  96               	.LM7:
+  97 006c C601      		movw r24,r12
+  98 006e 60E0      		ldi r22,lo8(.LC0)
+  99 0070 70E0      		ldi r23,hi8(.LC0)
+ 100 0072 44E0      		ldi r20,lo8(4)
+ 101 0074 50E0      		ldi r21,hi8(4)
+ 102 0076 0E94 0000 		call strncmp
+ 103 007a 0097      		sbiw r24,0
+ 104 007c 01F0      		breq .+2
+ 105 007e 00C0      		rjmp .L4
+ 106               	.LM8:
+ 107 0080 83E0      		ldi r24,lo8(3)
+ 108 0082 882E      		mov r8,r24
+ 109 0084 912C      		mov r9,__zero_reg__
+ 110 0086 8C0E      		add r8,r28
+ 111 0088 9D1E      		adc r9,r29
+ 112 008a C801      		movw r24,r16
+ 113 008c B401      		movw r22,r8
+ 114 008e 44E0      		ldi r20,lo8(4)
+ 115 0090 50E0      		ldi r21,hi8(4)
+ 116 0092 0E94 0000 		call fat_read_file
+ 117               	.LM9:
+ 118 0096 C801      		movw r24,r16
+ 119 0098 B601      		movw r22,r12
+ 120 009a 44E0      		ldi r20,lo8(4)
+ 121 009c 50E0      		ldi r21,hi8(4)
+ 122 009e 0E94 0000 		call fat_read_file
+ 123               	.LM10:
+ 124 00a2 C601      		movw r24,r12
+ 125 00a4 60E0      		ldi r22,lo8(.LC1)
+ 126 00a6 70E0      		ldi r23,hi8(.LC1)
+ 127 00a8 44E0      		ldi r20,lo8(4)
+ 128 00aa 50E0      		ldi r21,hi8(4)
+ 129 00ac 0E94 0000 		call strncmp
+ 130 00b0 0097      		sbiw r24,0
+ 131 00b2 01F0      		breq .L5
+ 132 00b4 83E0      		ldi r24,lo8(3)
+ 133 00b6 00C0      		rjmp .L3
+ 134               	.L5:
+ 135               	.LM11:
+ 136 00b8 C801      		movw r24,r16
+ 137 00ba B601      		movw r22,r12
+ 138 00bc 44E0      		ldi r20,lo8(4)
+ 139 00be 50E0      		ldi r21,hi8(4)
+ 140 00c0 0E94 0000 		call fat_read_file
+ 141               	.LM12:
+ 142 00c4 C601      		movw r24,r12
+ 143 00c6 60E0      		ldi r22,lo8(.LC2)
+ 144 00c8 70E0      		ldi r23,hi8(.LC2)
+ 145 00ca 44E0      		ldi r20,lo8(4)
+ 146 00cc 50E0      		ldi r21,hi8(4)
+ 147 00ce 0E94 0000 		call strncmp
+ 148 00d2 0097      		sbiw r24,0
+ 149 00d4 01F0      		breq .+2
+ 150 00d6 00C0      		rjmp .L4
+ 151               	.LM13:
+ 152 00d8 C801      		movw r24,r16
+ 153 00da B401      		movw r22,r8
+ 154 00dc 44E0      		ldi r20,lo8(4)
+ 155 00de 50E0      		ldi r21,hi8(4)
+ 156 00e0 0E94 0000 		call fat_read_file
+ 157               	.LM14:
+ 158 00e4 7E01      		movw r14,r28
+ 159 00e6 0894      		sec
+ 160 00e8 E11C      		adc r14,__zero_reg__
+ 161 00ea F11C      		adc r15,__zero_reg__
+ 162 00ec C801      		movw r24,r16
+ 163 00ee B701      		movw r22,r14
+ 164 00f0 42E0      		ldi r20,lo8(2)
+ 165 00f2 50E0      		ldi r21,hi8(2)
+ 166 00f4 0E94 0000 		call fat_read_file
+ 167               	.LM15:
+ 168 00f8 8981      		ldd r24,Y+1
+ 169 00fa 9A81      		ldd r25,Y+2
+ 170               	.LVL5:
+ 171 00fc 0197      		sbiw r24,1
+ 172 00fe 01F0      		breq .L6
+ 173               	.LVL6:
+ 174 0100 84E0      		ldi r24,lo8(4)
+ 175               	.LVL7:
+ 176 0102 00C0      		rjmp .L3
+ 177               	.LVL8:
+ 178               	.L6:
+ 179               	.LM16:
+ 180 0104 C801      		movw r24,r16
+ 181               	.LVL9:
+ 182 0106 B701      		movw r22,r14
+ 183 0108 42E0      		ldi r20,lo8(2)
+ 184 010a 50E0      		ldi r21,hi8(2)
+ 185 010c 0E94 0000 		call fat_read_file
+ 186               	.LM17:
+ 187 0110 8981      		ldd r24,Y+1
+ 188 0112 F501      		movw r30,r10
+ 189 0114 8287      		std Z+10,r24
+ 190               	.LM18:
+ 191 0116 C801      		movw r24,r16
+ 192 0118 B401      		movw r22,r8
+ 193 011a 44E0      		ldi r20,lo8(4)
+ 194 011c 50E0      		ldi r21,hi8(4)
+ 195 011e 0E94 0000 		call fat_read_file
+ 196               	.LM19:
+ 197 0122 8B81      		ldd r24,Y+3
+ 198 0124 9C81      		ldd r25,Y+4
+ 199               	.LVL10:
+ 200 0126 F501      		movw r30,r10
+ 201 0128 9187      		std Z+9,r25
+ 202 012a 8087      		std Z+8,r24
+ 203               	.LM20:
+ 204 012c C801      		movw r24,r16
+ 205 012e B401      		movw r22,r8
+ 206 0130 44E0      		ldi r20,lo8(4)
+ 207 0132 50E0      		ldi r21,hi8(4)
+ 208 0134 0E94 0000 		call fat_read_file
+ 209               	.LM21:
+ 210 0138 C801      		movw r24,r16
+ 211 013a B701      		movw r22,r14
+ 212 013c 42E0      		ldi r20,lo8(2)
+ 213 013e 50E0      		ldi r21,hi8(2)
+ 214 0140 0E94 0000 		call fat_read_file
+ 215               	.LM22:
+ 216 0144 C801      		movw r24,r16
+ 217 0146 B701      		movw r22,r14
+ 218 0148 42E0      		ldi r20,lo8(2)
+ 219 014a 50E0      		ldi r21,hi8(2)
+ 220 014c 0E94 0000 		call fat_read_file
+ 221               	.LM23:
+ 222 0150 8981      		ldd r24,Y+1
+ 223 0152 F501      		movw r30,r10
+ 224 0154 8387      		std Z+11,r24
+ 225               	.LM24:
+ 226 0156 C801      		movw r24,r16
+ 227 0158 B601      		movw r22,r12
+ 228 015a 44E0      		ldi r20,lo8(4)
+ 229 015c 50E0      		ldi r21,hi8(4)
+ 230 015e 0E94 0000 		call fat_read_file
+ 231               	.LM25:
+ 232 0162 C601      		movw r24,r12
+ 233 0164 60E0      		ldi r22,lo8(.LC3)
+ 234 0166 70E0      		ldi r23,hi8(.LC3)
+ 235 0168 44E0      		ldi r20,lo8(4)
+ 236 016a 50E0      		ldi r21,hi8(4)
+ 237 016c 0E94 0000 		call strncmp
+ 238 0170 0097      		sbiw r24,0
+ 239 0172 01F4      		brne .L4
+ 240               	.LVL11:
+ 241               	.LM26:
+ 242 0174 C801      		movw r24,r16
+ 243 0176 B401      		movw r22,r8
+ 244 0178 44E0      		ldi r20,lo8(4)
+ 245 017a 50E0      		ldi r21,hi8(4)
+ 246 017c 0E94 0000 		call fat_read_file
+ 247               	.LM27:
+ 248 0180 8B81      		ldd r24,Y+3
+ 249 0182 9C81      		ldd r25,Y+4
+ 250 0184 AD81      		ldd r26,Y+5
+ 251 0186 BE81      		ldd r27,Y+6
+ 252 0188 F501      		movw r30,r10
+ 253 018a 8483      		std Z+4,r24
+ 254 018c 9583      		std Z+5,r25
+ 255 018e A683      		std Z+6,r26
+ 256 0190 B783      		std Z+7,r27
+ 257               	.LM28:
+ 258 0192 C801      		movw r24,r16
+ 259 0194 B501      		movw r22,r10
+ 260 0196 0E94 0000 		call fat_tell_file
+ 261 019a 80E0      		ldi r24,lo8(0)
+ 262 019c 00C0      		rjmp .L3
+ 263               	.LVL12:
+ 264               	.L4:
+ 265               	.LM29:
+ 266 019e 82E0      		ldi r24,lo8(2)
+ 267               	.LVL13:
+ 268               	.L3:
+ 269               	/* epilogue start */
+ 270               	.LM30:
+ 271 01a0 2F96      		adiw r28,15
+ 272 01a2 0FB6      		in __tmp_reg__,__SREG__
+ 273 01a4 F894      		cli
+ 274 01a6 DEBF      		out __SP_H__,r29
+ 275 01a8 0FBE      		out __SREG__,__tmp_reg__
+ 276 01aa CDBF      		out __SP_L__,r28
+ 277 01ac CF91      		pop r28
+ 278 01ae DF91      		pop r29
+ 279 01b0 1F91      		pop r17
+ 280 01b2 0F91      		pop r16
+ 281               	.LVL14:
+ 282 01b4 FF90      		pop r15
+ 283 01b6 EF90      		pop r14
+ 284 01b8 DF90      		pop r13
+ 285 01ba CF90      		pop r12
+ 286 01bc BF90      		pop r11
+ 287 01be AF90      		pop r10
+ 288               	.LVL15:
+ 289 01c0 9F90      		pop r9
+ 290 01c2 8F90      		pop r8
+ 291 01c4 0895      		ret
+ 292               	.LFE3:
+ 318               	.Letext0:
+DEFINED SYMBOLS
+                            *ABS*:00000000 wavparser.c
+/var/folders/hh/hhtmCPxAFD0g-dt-xVOMP++++TI/-Tmp-//cc6z7Ddk.s:2      *ABS*:0000003f __SREG__
+/var/folders/hh/hhtmCPxAFD0g-dt-xVOMP++++TI/-Tmp-//cc6z7Ddk.s:3      *ABS*:0000003e __SP_H__
+/var/folders/hh/hhtmCPxAFD0g-dt-xVOMP++++TI/-Tmp-//cc6z7Ddk.s:4      *ABS*:0000003d __SP_L__
+/var/folders/hh/hhtmCPxAFD0g-dt-xVOMP++++TI/-Tmp-//cc6z7Ddk.s:5      *ABS*:00000034 __CCP__
+/var/folders/hh/hhtmCPxAFD0g-dt-xVOMP++++TI/-Tmp-//cc6z7Ddk.s:6      *ABS*:00000000 __tmp_reg__
+/var/folders/hh/hhtmCPxAFD0g-dt-xVOMP++++TI/-Tmp-//cc6z7Ddk.s:7      *ABS*:00000001 __zero_reg__
+/var/folders/hh/hhtmCPxAFD0g-dt-xVOMP++++TI/-Tmp-//cc6z7Ddk.s:28     .text:00000000 wavparser_parse_header
+
+UNDEFINED SYMBOLS
+fat_seek_file
+fat_read_file
+strncmp
+fat_tell_file
+__do_copy_data

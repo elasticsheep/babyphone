@@ -1,0 +1,302 @@
+   1               		.file	"partition.c"
+   2               	__SREG__ = 0x3f
+   3               	__SP_H__ = 0x3e
+   4               	__SP_L__ = 0x3d
+   5               	__CCP__  = 0x34
+   6               	__tmp_reg__ = 0
+   7               	__zero_reg__ = 1
+  15               	.Ltext0:
+  16               	.global	partition_close
+  18               	partition_close:
+  19               	.LFB3:
+  20               	.LM1:
+  21               	.LVL0:
+  22               	/* prologue: function */
+  23               	/* frame size = 0 */
+  24 0000 FC01      		movw r30,r24
+  25               	.LM2:
+  26 0002 0097      		sbiw r24,0
+  27 0004 01F4      		brne .L2
+  28 0006 80E0      		ldi r24,lo8(0)
+  29               	.LVL1:
+  30 0008 0895      		ret
+  31               	.LVL2:
+  32               	.L2:
+  33               	.LM3:
+  34 000a 1086      		std Z+8,__zero_reg__
+  35 000c 81E0      		ldi r24,lo8(1)
+  36               	.LVL3:
+  37               	.LM4:
+  38 000e 0895      		ret
+  39               	.LFE3:
+  41               	.global	partition_open
+  43               	partition_open:
+  44               	.LFB2:
+  45               	.LM5:
+  46               	.LVL4:
+  47 0010 8F92      		push r8
+  48 0012 9F92      		push r9
+  49 0014 AF92      		push r10
+  50 0016 BF92      		push r11
+  51 0018 CF92      		push r12
+  52 001a DF92      		push r13
+  53 001c EF92      		push r14
+  54 001e FF92      		push r15
+  55 0020 0F93      		push r16
+  56               	.LVL5:
+  57 0022 DF93      		push r29
+  58 0024 CF93      		push r28
+  59 0026 CDB7      		in r28,__SP_L__
+  60 0028 DEB7      		in r29,__SP_H__
+  61 002a 6097      		sbiw r28,16
+  62 002c 0FB6      		in __tmp_reg__,__SREG__
+  63 002e F894      		cli
+  64 0030 DEBF      		out __SP_H__,r29
+  65 0032 0FBE      		out __SREG__,__tmp_reg__
+  66 0034 CDBF      		out __SP_L__,r28
+  67               	/* prologue: function */
+  68               	/* frame size = 16 */
+  69 0036 7C01      		movw r14,r24
+  70 0038 6B01      		movw r12,r22
+  71 003a 5A01      		movw r10,r20
+  72 003c 4901      		movw r8,r18
+  73               	.LM6:
+  74 003e 0097      		sbiw r24,0
+  75 0040 01F4      		brne .+2
+  76 0042 00C0      		rjmp .L6
+  77               	.LVL6:
+  78 0044 6115      		cp r22,__zero_reg__
+  79 0046 7105      		cpc r23,__zero_reg__
+  80 0048 01F4      		brne .+2
+  81 004a 00C0      		rjmp .L6
+  82               	.LVL7:
+  83 004c 0430      		cpi r16,lo8(4)
+  84               	.LVL8:
+  85 004e 04F0      		brlt .+2
+  86 0050 00C0      		rjmp .L6
+  87               	.LM7:
+  88 0052 07FD      		sbrc r16,7
+  89 0054 00C0      		rjmp .L7
+  90               	.LM8:
+  91 0056 602F      		mov r22,r16
+  92 0058 7727      		clr r23
+  93 005a 67FD      		sbrc r22,7
+  94 005c 7095      		com r23
+  95               	.LVL9:
+  96 005e E4E0      		ldi r30,4
+  97 0060 660F      	1:	lsl r22
+  98 0062 771F      		rol r23
+  99 0064 EA95      		dec r30
+ 100 0066 01F4      		brne 1b
+ 101               	.LVL10:
+ 102 0068 6254      		subi r22,lo8(-(446))
+ 103 006a 7E4F      		sbci r23,hi8(-(446))
+ 104               	.LVL11:
+ 105 006c 8827      		clr r24
+ 106 006e 77FD      		sbrc r23,7
+ 107 0070 8095      		com r24
+ 108 0072 982F      		mov r25,r24
+ 109               	.LVL12:
+ 110 0074 AE01      		movw r20,r28
+ 111 0076 4F5F      		subi r20,lo8(-(1))
+ 112 0078 5F4F      		sbci r21,hi8(-(1))
+ 113 007a 20E1      		ldi r18,lo8(16)
+ 114 007c 30E0      		ldi r19,hi8(16)
+ 115 007e F701      		movw r30,r14
+ 116 0080 0995      		icall
+ 117               	.LVL13:
+ 118 0082 8823      		tst r24
+ 119 0084 01F4      		brne .+2
+ 120 0086 00C0      		rjmp .L6
+ 121               	.LM9:
+ 122 0088 8D81      		ldd r24,Y+5
+ 123 008a 8823      		tst r24
+ 124 008c 01F4      		brne .+2
+ 125 008e 00C0      		rjmp .L6
+ 126               	.LVL14:
+ 127               	.L7:
+ 128               	.LM10:
+ 129 0090 8091 0000 		lds r24,partition_handles+8
+ 130 0094 8823      		tst r24
+ 131 0096 01F0      		breq .+2
+ 132 0098 00C0      		rjmp .L6
+ 133 009a 00C0      		rjmp .L15
+ 134               	.L10:
+ 135               	.LM11:
+ 136 009c 8D81      		ldd r24,Y+5
+ 137 009e 8093 0000 		sts partition_handles+8,r24
+ 138               	.LM12:
+ 139 00a2 2A85      		ldd r18,Y+10
+ 140 00a4 30E0      		ldi r19,lo8(0)
+ 141 00a6 40E0      		ldi r20,lo8(0)
+ 142 00a8 50E0      		ldi r21,hi8(0)
+ 143 00aa 542F      		mov r21,r20
+ 144 00ac 432F      		mov r20,r19
+ 145 00ae 322F      		mov r19,r18
+ 146 00b0 2227      		clr r18
+ 147 00b2 8B85      		ldd r24,Y+11
+ 148 00b4 90E0      		ldi r25,lo8(0)
+ 149 00b6 A0E0      		ldi r26,lo8(0)
+ 150 00b8 B0E0      		ldi r27,hi8(0)
+ 151 00ba DC01      		movw r26,r24
+ 152 00bc 9927      		clr r25
+ 153 00be 8827      		clr r24
+ 154 00c0 282B      		or r18,r24
+ 155 00c2 392B      		or r19,r25
+ 156 00c4 4A2B      		or r20,r26
+ 157 00c6 5B2B      		or r21,r27
+ 158 00c8 8985      		ldd r24,Y+9
+ 159 00ca 90E0      		ldi r25,lo8(0)
+ 160 00cc A0E0      		ldi r26,lo8(0)
+ 161 00ce B0E0      		ldi r27,hi8(0)
+ 162 00d0 282B      		or r18,r24
+ 163 00d2 392B      		or r19,r25
+ 164 00d4 4A2B      		or r20,r26
+ 165 00d6 5B2B      		or r21,r27
+ 166 00d8 8C85      		ldd r24,Y+12
+ 167 00da 90E0      		ldi r25,lo8(0)
+ 168 00dc A0E0      		ldi r26,lo8(0)
+ 169 00de B0E0      		ldi r27,hi8(0)
+ 170 00e0 B82F      		mov r27,r24
+ 171 00e2 AA27      		clr r26
+ 172 00e4 9927      		clr r25
+ 173 00e6 8827      		clr r24
+ 174               	.LVL15:
+ 175 00e8 282B      		or r18,r24
+ 176 00ea 392B      		or r19,r25
+ 177 00ec 4A2B      		or r20,r26
+ 178 00ee 5B2B      		or r21,r27
+ 179 00f0 2093 0000 		sts partition_handles+9,r18
+ 180 00f4 3093 0000 		sts (partition_handles+9)+1,r19
+ 181 00f8 4093 0000 		sts (partition_handles+9)+2,r20
+ 182 00fc 5093 0000 		sts (partition_handles+9)+3,r21
+ 183               	.LM13:
+ 184 0100 2E85      		ldd r18,Y+14
+ 185 0102 30E0      		ldi r19,lo8(0)
+ 186 0104 40E0      		ldi r20,lo8(0)
+ 187 0106 50E0      		ldi r21,hi8(0)
+ 188 0108 542F      		mov r21,r20
+ 189 010a 432F      		mov r20,r19
+ 190 010c 322F      		mov r19,r18
+ 191 010e 2227      		clr r18
+ 192 0110 8F85      		ldd r24,Y+15
+ 193 0112 90E0      		ldi r25,lo8(0)
+ 194 0114 A0E0      		ldi r26,lo8(0)
+ 195 0116 B0E0      		ldi r27,hi8(0)
+ 196 0118 DC01      		movw r26,r24
+ 197 011a 9927      		clr r25
+ 198 011c 8827      		clr r24
+ 199 011e 282B      		or r18,r24
+ 200 0120 392B      		or r19,r25
+ 201 0122 4A2B      		or r20,r26
+ 202 0124 5B2B      		or r21,r27
+ 203 0126 8D85      		ldd r24,Y+13
+ 204 0128 90E0      		ldi r25,lo8(0)
+ 205 012a A0E0      		ldi r26,lo8(0)
+ 206 012c B0E0      		ldi r27,hi8(0)
+ 207 012e 282B      		or r18,r24
+ 208 0130 392B      		or r19,r25
+ 209 0132 4A2B      		or r20,r26
+ 210 0134 5B2B      		or r21,r27
+ 211 0136 8889      		ldd r24,Y+16
+ 212 0138 90E0      		ldi r25,lo8(0)
+ 213 013a A0E0      		ldi r26,lo8(0)
+ 214 013c B0E0      		ldi r27,hi8(0)
+ 215 013e B82F      		mov r27,r24
+ 216 0140 AA27      		clr r26
+ 217 0142 9927      		clr r25
+ 218 0144 8827      		clr r24
+ 219 0146 282B      		or r18,r24
+ 220 0148 392B      		or r19,r25
+ 221 014a 4A2B      		or r20,r26
+ 222 014c 5B2B      		or r21,r27
+ 223 014e 2093 0000 		sts partition_handles+13,r18
+ 224 0152 3093 0000 		sts (partition_handles+13)+1,r19
+ 225 0156 4093 0000 		sts (partition_handles+13)+2,r20
+ 226 015a 5093 0000 		sts (partition_handles+13)+3,r21
+ 227 015e 00C0      		rjmp .L14
+ 228               	.LVL16:
+ 229               	.L16:
+ 230               	.LM14:
+ 231 0160 8FEF      		ldi r24,lo8(-1)
+ 232 0162 8093 0000 		sts partition_handles+8,r24
+ 233               	.L14:
+ 234 0166 9F01      		movw r18,r30
+ 235               	.LVL17:
+ 236 0168 00C0      		rjmp .L9
+ 237               	.LVL18:
+ 238               	.L6:
+ 239 016a 20E0      		ldi r18,lo8(0)
+ 240 016c 30E0      		ldi r19,hi8(0)
+ 241               	.LVL19:
+ 242               	.L9:
+ 243               	.LM15:
+ 244 016e C901      		movw r24,r18
+ 245               	.LVL20:
+ 246               	/* epilogue start */
+ 247 0170 6096      		adiw r28,16
+ 248 0172 0FB6      		in __tmp_reg__,__SREG__
+ 249 0174 F894      		cli
+ 250 0176 DEBF      		out __SP_H__,r29
+ 251 0178 0FBE      		out __SREG__,__tmp_reg__
+ 252 017a CDBF      		out __SP_L__,r28
+ 253 017c CF91      		pop r28
+ 254 017e DF91      		pop r29
+ 255 0180 0F91      		pop r16
+ 256               	.LVL21:
+ 257 0182 FF90      		pop r15
+ 258 0184 EF90      		pop r14
+ 259               	.LVL22:
+ 260 0186 DF90      		pop r13
+ 261 0188 CF90      		pop r12
+ 262               	.LVL23:
+ 263 018a BF90      		pop r11
+ 264 018c AF90      		pop r10
+ 265               	.LVL24:
+ 266 018e 9F90      		pop r9
+ 267 0190 8F90      		pop r8
+ 268               	.LVL25:
+ 269 0192 0895      		ret
+ 270               	.LVL26:
+ 271               	.L15:
+ 272               	.LM16:
+ 273 0194 E0E0      		ldi r30,lo8(partition_handles)
+ 274 0196 F0E0      		ldi r31,hi8(partition_handles)
+ 275 0198 81E1      		ldi r24,lo8(17)
+ 276 019a DF01      		movw r26,r30
+ 277 019c 1D92      		st X+,__zero_reg__
+ 278 019e 8A95      	        dec r24
+ 279 01a0 01F4      		brne .-6
+ 280               	.LM17:
+ 281 01a2 F092 0000 		sts (partition_handles)+1,r15
+ 282 01a6 E092 0000 		sts partition_handles,r14
+ 283               	.LM18:
+ 284 01aa D092 0000 		sts (partition_handles+2)+1,r13
+ 285 01ae C092 0000 		sts partition_handles+2,r12
+ 286               	.LM19:
+ 287 01b2 B092 0000 		sts (partition_handles+4)+1,r11
+ 288 01b6 A092 0000 		sts partition_handles+4,r10
+ 289               	.LM20:
+ 290 01ba 9092 0000 		sts (partition_handles+6)+1,r9
+ 291 01be 8092 0000 		sts partition_handles+6,r8
+ 292               	.LM21:
+ 293 01c2 07FF      		sbrs r16,7
+ 294 01c4 00C0      		rjmp .L10
+ 295 01c6 00C0      		rjmp .L16
+ 296               	.LFE2:
+ 298               		.lcomm partition_handles,17
+ 331               	.Letext0:
+DEFINED SYMBOLS
+                            *ABS*:00000000 partition.c
+/var/folders/hh/hhtmCPxAFD0g-dt-xVOMP++++TI/-Tmp-//ccDYprJ7.s:2      *ABS*:0000003f __SREG__
+/var/folders/hh/hhtmCPxAFD0g-dt-xVOMP++++TI/-Tmp-//ccDYprJ7.s:3      *ABS*:0000003e __SP_H__
+/var/folders/hh/hhtmCPxAFD0g-dt-xVOMP++++TI/-Tmp-//ccDYprJ7.s:4      *ABS*:0000003d __SP_L__
+/var/folders/hh/hhtmCPxAFD0g-dt-xVOMP++++TI/-Tmp-//ccDYprJ7.s:5      *ABS*:00000034 __CCP__
+/var/folders/hh/hhtmCPxAFD0g-dt-xVOMP++++TI/-Tmp-//ccDYprJ7.s:6      *ABS*:00000000 __tmp_reg__
+/var/folders/hh/hhtmCPxAFD0g-dt-xVOMP++++TI/-Tmp-//ccDYprJ7.s:7      *ABS*:00000001 __zero_reg__
+/var/folders/hh/hhtmCPxAFD0g-dt-xVOMP++++TI/-Tmp-//ccDYprJ7.s:18     .text:00000000 partition_close
+/var/folders/hh/hhtmCPxAFD0g-dt-xVOMP++++TI/-Tmp-//ccDYprJ7.s:43     .text:00000010 partition_open
+                             .bss:00000000 partition_handles
+
+UNDEFINED SYMBOLS
+__do_clear_bss

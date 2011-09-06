@@ -1,0 +1,94 @@
+   1               		.file	"delay.c"
+   2               	__SREG__ = 0x3f
+   3               	__SP_H__ = 0x3e
+   4               	__SP_L__ = 0x3d
+   5               	__CCP__  = 0x34
+   6               	__tmp_reg__ = 0
+   7               	__zero_reg__ = 1
+  15               	.Ltext0:
+  16               	.global	delay_ms
+  18               	delay_ms:
+  19               	.LFB6:
+  20               	.LM1:
+  21               	.LVL0:
+  22               	/* prologue: function */
+  23               	/* frame size = 0 */
+  24               	.LBB30:
+  25               	.LBB31:
+  26               	.LBB32:
+  27               	.LBB33:
+  28               	.LM2:
+  29 0000 20EA      		ldi r18,lo8(4000)
+  30 0002 3FE0      		ldi r19,hi8(4000)
+  31 0004 00C0      		rjmp .L2
+  32               	.LVL1:
+  33               	.L3:
+  34 0006 F901      		movw r30,r18
+  35               	/* #APP */
+  36               	 ;  105 "/usr/local/CrossPack-AVR-20100115/lib/gcc/avr/4.3.3/../../../../avr/include/util/delay_bas
+  37 0008 3197      		1: sbiw r30,1
+  38 000a 01F4      		brne 1b
+  39               	 ;  0 "" 2
+  40               	/* #NOAPP */
+  41 000c 0197      		sbiw r24,1
+  42               	.L2:
+  43               	.LBE33:
+  44               	.LBE32:
+  45               	.LBE31:
+  46               	.LBE30:
+  47               	.LM3:
+  48 000e 0097      		sbiw r24,0
+  49 0010 01F4      		brne .L3
+  50               	/* epilogue start */
+  51               	.LM4:
+  52 0012 0895      		ret
+  53               	.LFE6:
+  55               	.global	delay_us
+  57               	delay_us:
+  58               	.LFB7:
+  59               	.LM5:
+  60               	.LVL2:
+  61               	/* prologue: function */
+  62               	/* frame size = 0 */
+  63               	.LBB34:
+  64               	.LBB35:
+  65               	.LBB36:
+  66               	.LBB37:
+  67               	.LM6:
+  68 0014 35E0      		ldi r19,lo8(5)
+  69 0016 00C0      		rjmp .L6
+  70               	.LVL3:
+  71               	.L7:
+  72 0018 232F      		mov r18,r19
+  73               	/* #APP */
+  74               	 ;  83 "/usr/local/CrossPack-AVR-20100115/lib/gcc/avr/4.3.3/../../../../avr/include/util/delay_basi
+  75 001a 2A95      		1: dec r18
+  76 001c 01F4      		brne 1b
+  77               	 ;  0 "" 2
+  78               	/* #NOAPP */
+  79 001e 0197      		sbiw r24,1
+  80               	.L6:
+  81               	.LBE37:
+  82               	.LBE36:
+  83               	.LBE35:
+  84               	.LBE34:
+  85               	.LM7:
+  86 0020 0097      		sbiw r24,0
+  87 0022 01F4      		brne .L7
+  88               	/* epilogue start */
+  89               	.LM8:
+  90 0024 0895      		ret
+  91               	.LFE7:
+ 125               	.Letext0:
+DEFINED SYMBOLS
+                            *ABS*:00000000 delay.c
+/var/folders/hh/hhtmCPxAFD0g-dt-xVOMP++++TI/-Tmp-//cc9NJ0yH.s:2      *ABS*:0000003f __SREG__
+/var/folders/hh/hhtmCPxAFD0g-dt-xVOMP++++TI/-Tmp-//cc9NJ0yH.s:3      *ABS*:0000003e __SP_H__
+/var/folders/hh/hhtmCPxAFD0g-dt-xVOMP++++TI/-Tmp-//cc9NJ0yH.s:4      *ABS*:0000003d __SP_L__
+/var/folders/hh/hhtmCPxAFD0g-dt-xVOMP++++TI/-Tmp-//cc9NJ0yH.s:5      *ABS*:00000034 __CCP__
+/var/folders/hh/hhtmCPxAFD0g-dt-xVOMP++++TI/-Tmp-//cc9NJ0yH.s:6      *ABS*:00000000 __tmp_reg__
+/var/folders/hh/hhtmCPxAFD0g-dt-xVOMP++++TI/-Tmp-//cc9NJ0yH.s:7      *ABS*:00000001 __zero_reg__
+/var/folders/hh/hhtmCPxAFD0g-dt-xVOMP++++TI/-Tmp-//cc9NJ0yH.s:18     .text:00000000 delay_ms
+/var/folders/hh/hhtmCPxAFD0g-dt-xVOMP++++TI/-Tmp-//cc9NJ0yH.s:57     .text:00000014 delay_us
+
+NO UNDEFINED SYMBOLS

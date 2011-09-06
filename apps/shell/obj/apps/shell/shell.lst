@@ -1,0 +1,1749 @@
+   1               		.file	"shell.c"
+   2               	__SREG__ = 0x3f
+   3               	__SP_H__ = 0x3e
+   4               	__SP_L__ = 0x3d
+   5               	__CCP__  = 0x34
+   6               	__tmp_reg__ = 0
+   7               	__zero_reg__ = 1
+  15               	.Ltext0:
+  17               	print_disk_info:
+  18               	.LFB20:
+  19               	.LM1:
+  20               	.LVL0:
+  21 0000 0F93      		push r16
+  22 0002 1F93      		push r17
+  23 0004 DF93      		push r29
+  24 0006 CF93      		push r28
+  25 0008 CDB7      		in r28,__SP_L__
+  26 000a DEB7      		in r29,__SP_H__
+  27 000c 6997      		sbiw r28,25
+  28 000e 0FB6      		in __tmp_reg__,__SREG__
+  29 0010 F894      		cli
+  30 0012 DEBF      		out __SP_H__,r29
+  31 0014 0FBE      		out __SREG__,__tmp_reg__
+  32 0016 CDBF      		out __SP_L__,r28
+  33               	/* prologue: function */
+  34               	/* frame size = 25 */
+  35 0018 8C01      		movw r16,r24
+  36               	.LM2:
+  37 001a 0097      		sbiw r24,0
+  38 001c 01F4      		brne .+2
+  39 001e 00C0      		rjmp .L2
+  40               	.LM3:
+  41 0020 CE01      		movw r24,r28
+  42               	.LVL1:
+  43 0022 0196      		adiw r24,1
+  44 0024 0E94 0000 		call sd_raw_get_info
+  45 0028 8823      		tst r24
+  46 002a 01F4      		brne .+2
+  47 002c 00C0      		rjmp .L2
+  48               	.LM4:
+  49 002e 80E0      		ldi r24,lo8(__c.2192)
+  50 0030 90E0      		ldi r25,hi8(__c.2192)
+  51 0032 0E94 0000 		call uart_puts_p
+  52 0036 8981      		ldd r24,Y+1
+  53 0038 0E94 0000 		call uart_putc_hex
+  54 003c 8AE0      		ldi r24,lo8(10)
+  55 003e 0E94 0000 		call uart_putc
+  56               	.LM5:
+  57 0042 80E0      		ldi r24,lo8(__c.2194)
+  58 0044 90E0      		ldi r25,hi8(__c.2194)
+  59 0046 0E94 0000 		call uart_puts_p
+  60 004a CE01      		movw r24,r28
+  61 004c 0296      		adiw r24,2
+  62 004e 0E94 0000 		call uart_puts
+  63 0052 8AE0      		ldi r24,lo8(10)
+  64 0054 0E94 0000 		call uart_putc
+  65               	.LM6:
+  66 0058 80E0      		ldi r24,lo8(__c.2196)
+  67 005a 90E0      		ldi r25,hi8(__c.2196)
+  68 005c 0E94 0000 		call uart_puts_p
+  69 0060 CE01      		movw r24,r28
+  70 0062 0596      		adiw r24,5
+  71 0064 0E94 0000 		call uart_puts
+  72 0068 8AE0      		ldi r24,lo8(10)
+  73 006a 0E94 0000 		call uart_putc
+  74               	.LM7:
+  75 006e 80E0      		ldi r24,lo8(__c.2198)
+  76 0070 90E0      		ldi r25,hi8(__c.2198)
+  77 0072 0E94 0000 		call uart_puts_p
+  78 0076 8B85      		ldd r24,Y+11
+  79 0078 0E94 0000 		call uart_putc_hex
+  80 007c 8AE0      		ldi r24,lo8(10)
+  81 007e 0E94 0000 		call uart_putc
+  82               	.LM8:
+  83 0082 80E0      		ldi r24,lo8(__c.2200)
+  84 0084 90E0      		ldi r25,hi8(__c.2200)
+  85 0086 0E94 0000 		call uart_puts_p
+  86 008a 6C85      		ldd r22,Y+12
+  87 008c 7D85      		ldd r23,Y+13
+  88 008e 8E85      		ldd r24,Y+14
+  89 0090 9F85      		ldd r25,Y+15
+  90 0092 0E94 0000 		call uart_putdw_hex
+  91 0096 8AE0      		ldi r24,lo8(10)
+  92 0098 0E94 0000 		call uart_putc
+  93               	.LM9:
+  94 009c 80E0      		ldi r24,lo8(__c.2202)
+  95 009e 90E0      		ldi r25,hi8(__c.2202)
+  96 00a0 0E94 0000 		call uart_puts_p
+  97 00a4 8989      		ldd r24,Y+17
+  98 00a6 90E0      		ldi r25,lo8(0)
+  99 00a8 0E94 0000 		call uart_putw_dec
+ 100 00ac 8FE2      		ldi r24,lo8(47)
+ 101 00ae 0E94 0000 		call uart_putc
+ 102               	.LM10:
+ 103 00b2 8889      		ldd r24,Y+16
+ 104 00b4 90E0      		ldi r25,lo8(0)
+ 105 00b6 0E94 0000 		call uart_putw_dec
+ 106 00ba 8AE0      		ldi r24,lo8(10)
+ 107 00bc 0E94 0000 		call uart_putc
+ 108               	.LM11:
+ 109 00c0 80E0      		ldi r24,lo8(__c.2204)
+ 110 00c2 90E0      		ldi r25,hi8(__c.2204)
+ 111 00c4 0E94 0000 		call uart_puts_p
+ 112 00c8 6A89      		ldd r22,Y+18
+ 113 00ca 7B89      		ldd r23,Y+19
+ 114 00cc 8C89      		ldd r24,Y+20
+ 115 00ce 9D89      		ldd r25,Y+21
+ 116 00d0 24E1      		ldi r18,20
+ 117 00d2 9695      	1:	lsr r25
+ 118 00d4 8795      		ror r24
+ 119 00d6 7795      		ror r23
+ 120 00d8 6795      		ror r22
+ 121 00da 2A95      		dec r18
+ 122 00dc 01F4      		brne 1b
+ 123 00de 0E94 0000 		call uart_putdw_dec
+ 124 00e2 80E0      		ldi r24,lo8(__c.2206)
+ 125 00e4 90E0      		ldi r25,hi8(__c.2206)
+ 126 00e6 0E94 0000 		call uart_puts_p
+ 127               	.LM12:
+ 128 00ea 80E0      		ldi r24,lo8(__c.2208)
+ 129 00ec 90E0      		ldi r25,hi8(__c.2208)
+ 130 00ee 0E94 0000 		call uart_puts_p
+ 131 00f2 8E89      		ldd r24,Y+22
+ 132 00f4 90E0      		ldi r25,lo8(0)
+ 133 00f6 0E94 0000 		call uart_putw_dec
+ 134 00fa 8AE0      		ldi r24,lo8(10)
+ 135 00fc 0E94 0000 		call uart_putc
+ 136               	.LM13:
+ 137 0100 80E0      		ldi r24,lo8(__c.2210)
+ 138 0102 90E0      		ldi r25,hi8(__c.2210)
+ 139 0104 0E94 0000 		call uart_puts_p
+ 140 0108 888D      		ldd r24,Y+24
+ 141 010a 90E0      		ldi r25,lo8(0)
+ 142 010c 0E94 0000 		call uart_putw_dec
+ 143 0110 8FE2      		ldi r24,lo8(47)
+ 144 0112 0E94 0000 		call uart_putc
+ 145               	.LM14:
+ 146 0116 8F89      		ldd r24,Y+23
+ 147 0118 90E0      		ldi r25,lo8(0)
+ 148 011a 0E94 0000 		call uart_putw_dec
+ 149 011e 8AE0      		ldi r24,lo8(10)
+ 150 0120 0E94 0000 		call uart_putc
+ 151               	.LM15:
+ 152 0124 80E0      		ldi r24,lo8(__c.2212)
+ 153 0126 90E0      		ldi r25,hi8(__c.2212)
+ 154 0128 0E94 0000 		call uart_puts_p
+ 155 012c 898D      		ldd r24,Y+25
+ 156 012e 90E0      		ldi r25,lo8(0)
+ 157 0130 0E94 0000 		call uart_putw_dec
+ 158 0134 8AE0      		ldi r24,lo8(10)
+ 159 0136 0E94 0000 		call uart_putc
+ 160               	.LM16:
+ 161 013a 80E0      		ldi r24,lo8(__c.2214)
+ 162 013c 90E0      		ldi r25,hi8(__c.2214)
+ 163 013e 0E94 0000 		call uart_puts_p
+ 164 0142 C801      		movw r24,r16
+ 165 0144 0E94 0000 		call fat_get_fs_free
+ 166 0148 0E94 0000 		call uart_putdw_dec
+ 167 014c 8FE2      		ldi r24,lo8(47)
+ 168 014e 0E94 0000 		call uart_putc
+ 169               	.LM17:
+ 170 0152 C801      		movw r24,r16
+ 171 0154 0E94 0000 		call fat_get_fs_size
+ 172 0158 0E94 0000 		call uart_putdw_dec
+ 173 015c 8AE0      		ldi r24,lo8(10)
+ 174 015e 0E94 0000 		call uart_putc
+ 175 0162 81E0      		ldi r24,lo8(1)
+ 176 0164 00C0      		rjmp .L3
+ 177               	.LVL2:
+ 178               	.L2:
+ 179               	.LM18:
+ 180 0166 80E0      		ldi r24,lo8(0)
+ 181               	.L3:
+ 182               	/* epilogue start */
+ 183               	.LM19:
+ 184 0168 6996      		adiw r28,25
+ 185 016a 0FB6      		in __tmp_reg__,__SREG__
+ 186 016c F894      		cli
+ 187 016e DEBF      		out __SP_H__,r29
+ 188 0170 0FBE      		out __SREG__,__tmp_reg__
+ 189 0172 CDBF      		out __SP_L__,r28
+ 190 0174 CF91      		pop r28
+ 191 0176 DF91      		pop r29
+ 192 0178 1F91      		pop r17
+ 193 017a 0F91      		pop r16
+ 194               	.LVL3:
+ 195 017c 0895      		ret
+ 196               	.LFE20:
+ 199               	find_file_in_dir:
+ 200               	.LFB18:
+ 201               	.LM20:
+ 202               	.LVL4:
+ 203 017e EF92      		push r14
+ 204 0180 FF92      		push r15
+ 205 0182 0F93      		push r16
+ 206 0184 1F93      		push r17
+ 207 0186 CF93      		push r28
+ 208 0188 DF93      		push r29
+ 209               	/* prologue: function */
+ 210               	/* frame size = 0 */
+ 211 018a EB01      		movw r28,r22
+ 212 018c 8A01      		movw r16,r20
+ 213 018e 7901      		movw r14,r18
+ 214               	.LVL5:
+ 215 0190 00C0      		rjmp .L6
+ 216               	.LVL6:
+ 217               	.L8:
+ 218               	.LM21:
+ 219 0192 C701      		movw r24,r14
+ 220 0194 B801      		movw r22,r16
+ 221 0196 0E94 0000 		call strcmp
+ 222               	.LM22:
+ 223 019a 0097      		sbiw r24,0
+ 224 019c 01F4      		brne .L6
+ 225               	.LM23:
+ 226 019e CE01      		movw r24,r28
+ 227 01a0 0E94 0000 		call fat_reset_dir
+ 228 01a4 81E0      		ldi r24,lo8(1)
+ 229 01a6 00C0      		rjmp .L7
+ 230               	.LVL7:
+ 231               	.L6:
+ 232               	.LM24:
+ 233 01a8 CE01      		movw r24,r28
+ 234               	.LVL8:
+ 235 01aa B701      		movw r22,r14
+ 236 01ac 0E94 0000 		call fat_read_dir
+ 237 01b0 8823      		tst r24
+ 238 01b2 01F4      		brne .L8
+ 239               	.L7:
+ 240               	/* epilogue start */
+ 241               	.LM25:
+ 242 01b4 DF91      		pop r29
+ 243 01b6 CF91      		pop r28
+ 244               	.LVL9:
+ 245 01b8 1F91      		pop r17
+ 246 01ba 0F91      		pop r16
+ 247               	.LVL10:
+ 248 01bc FF90      		pop r15
+ 249 01be EF90      		pop r14
+ 250 01c0 0895      		ret
+ 251               	.LFE18:
+ 254               	open_file_in_dir:
+ 255               	.LFB19:
+ 256               	.LM26:
+ 257               	.LVL11:
+ 258 01c2 EF92      		push r14
+ 259 01c4 FF92      		push r15
+ 260 01c6 0F93      		push r16
+ 261 01c8 1F93      		push r17
+ 262 01ca DF93      		push r29
+ 263 01cc CF93      		push r28
+ 264 01ce CDB7      		in r28,__SP_L__
+ 265 01d0 DEB7      		in r29,__SP_H__
+ 266 01d2 AD97      		sbiw r28,45
+ 267 01d4 0FB6      		in __tmp_reg__,__SREG__
+ 268 01d6 F894      		cli
+ 269 01d8 DEBF      		out __SP_H__,r29
+ 270 01da 0FBE      		out __SREG__,__tmp_reg__
+ 271 01dc CDBF      		out __SP_L__,r28
+ 272               	/* prologue: function */
+ 273               	/* frame size = 45 */
+ 274 01de 8C01      		movw r16,r24
+ 275               	.LM27:
+ 276 01e0 7E01      		movw r14,r28
+ 277 01e2 0894      		sec
+ 278 01e4 E11C      		adc r14,__zero_reg__
+ 279 01e6 F11C      		adc r15,__zero_reg__
+ 280 01e8 9701      		movw r18,r14
+ 281 01ea 0E94 0000 		call find_file_in_dir
+ 282               	.LVL12:
+ 283 01ee 8823      		tst r24
+ 284 01f0 01F4      		brne .L12
+ 285 01f2 20E0      		ldi r18,lo8(0)
+ 286 01f4 30E0      		ldi r19,hi8(0)
+ 287 01f6 00C0      		rjmp .L13
+ 288               	.L12:
+ 289               	.LM28:
+ 290 01f8 C801      		movw r24,r16
+ 291 01fa B701      		movw r22,r14
+ 292 01fc 0E94 0000 		call fat_open_file
+ 293 0200 9C01      		movw r18,r24
+ 294               	.L13:
+ 295               	.LM29:
+ 296 0202 C901      		movw r24,r18
+ 297               	/* epilogue start */
+ 298 0204 AD96      		adiw r28,45
+ 299 0206 0FB6      		in __tmp_reg__,__SREG__
+ 300 0208 F894      		cli
+ 301 020a DEBF      		out __SP_H__,r29
+ 302 020c 0FBE      		out __SREG__,__tmp_reg__
+ 303 020e CDBF      		out __SP_L__,r28
+ 304 0210 CF91      		pop r28
+ 305 0212 DF91      		pop r29
+ 306 0214 1F91      		pop r17
+ 307 0216 0F91      		pop r16
+ 308               	.LVL13:
+ 309 0218 FF90      		pop r15
+ 310 021a EF90      		pop r14
+ 311 021c 0895      		ret
+ 312               	.LFE19:
+ 315               	read_line:
+ 316               	.LFB16:
+ 317               	.LM30:
+ 318               	.LVL14:
+ 319 021e CF92      		push r12
+ 320 0220 DF92      		push r13
+ 321 0222 EF92      		push r14
+ 322 0224 FF92      		push r15
+ 323 0226 0F93      		push r16
+ 324 0228 1F93      		push r17
+ 325 022a CF93      		push r28
+ 326 022c DF93      		push r29
+ 327               	/* prologue: function */
+ 328               	/* frame size = 0 */
+ 329 022e EC01      		movw r28,r24
+ 330 0230 162F      		mov r17,r22
+ 331               	.LM31:
+ 332 0232 60E0      		ldi r22,lo8(0)
+ 333 0234 70E0      		ldi r23,hi8(0)
+ 334               	.LVL15:
+ 335 0236 412F      		mov r20,r17
+ 336 0238 50E0      		ldi r21,lo8(0)
+ 337 023a 0E94 0000 		call memset
+ 338               	.LVL16:
+ 339 023e 00E0      		ldi r16,lo8(0)
+ 340               	.LVL17:
+ 341               	.LM32:
+ 342 0240 C12E      		mov r12,r17
+ 343 0242 DD24      		clr r13
+ 344 0244 0894      		sec
+ 345 0246 C108      		sbc r12,__zero_reg__
+ 346 0248 D108      		sbc r13,__zero_reg__
+ 347 024a 00C0      		rjmp .L25
+ 348               	.LVL18:
+ 349               	.L21:
+ 350               	.LBB49:
+ 351               	.LM33:
+ 352 024c 0E94 0000 		call uart_getc
+ 353 0250 182F      		mov r17,r24
+ 354               	.LVL19:
+ 355               	.LM34:
+ 356 0252 8830      		cpi r24,lo8(8)
+ 357 0254 01F0      		breq .L17
+ 358               	.LVL20:
+ 359 0256 8F37      		cpi r24,lo8(127)
+ 360 0258 01F4      		brne .L18
+ 361               	.L17:
+ 362               	.LM35:
+ 363 025a 0023      		tst r16
+ 364 025c 01F0      		breq .L25
+ 365               	.LVL21:
+ 366               	.LM36:
+ 367 025e 0150      		subi r16,lo8(-(-1))
+ 368               	.LM37:
+ 369 0260 FE01      		movw r30,r28
+ 370 0262 E00F      		add r30,r16
+ 371 0264 F11D      		adc r31,__zero_reg__
+ 372 0266 1082      		st Z,__zero_reg__
+ 373               	.LM38:
+ 374 0268 88E0      		ldi r24,lo8(8)
+ 375               	.LVL22:
+ 376 026a 0E94 0000 		call uart_putc
+ 377               	.LM39:
+ 378 026e 80E2      		ldi r24,lo8(32)
+ 379 0270 0E94 0000 		call uart_putc
+ 380               	.LM40:
+ 381 0274 88E0      		ldi r24,lo8(8)
+ 382 0276 0E94 0000 		call uart_putc
+ 383 027a 00C0      		rjmp .L25
+ 384               	.LVL23:
+ 385               	.L18:
+ 386               	.LM41:
+ 387 027c 0E94 0000 		call uart_putc
+ 388               	.LVL24:
+ 389 0280 FE01      		movw r30,r28
+ 390 0282 EE0D      		add r30,r14
+ 391 0284 FF1D      		adc r31,r15
+ 392               	.LM42:
+ 393 0286 1A30      		cpi r17,lo8(10)
+ 394 0288 01F4      		brne .L19
+ 395               	.LM43:
+ 396 028a 1082      		st Z,__zero_reg__
+ 397 028c 00C0      		rjmp .L20
+ 398               	.L19:
+ 399               	.LM44:
+ 400 028e 1083      		st Z,r17
+ 401               	.LM45:
+ 402 0290 0F5F      		subi r16,lo8(-(1))
+ 403               	.LVL25:
+ 404               	.L25:
+ 405               	.LBE49:
+ 406               	.LM46:
+ 407 0292 E02E      		mov r14,r16
+ 408 0294 FF24      		clr r15
+ 409 0296 EC14      		cp r14,r12
+ 410 0298 FD04      		cpc r15,r13
+ 411 029a 04F0      		brlt .L21
+ 412               	.LVL26:
+ 413               	.L20:
+ 414               	.LM47:
+ 415 029c 802F      		mov r24,r16
+ 416               	/* epilogue start */
+ 417 029e DF91      		pop r29
+ 418 02a0 CF91      		pop r28
+ 419               	.LVL27:
+ 420 02a2 1F91      		pop r17
+ 421               	.LVL28:
+ 422 02a4 0F91      		pop r16
+ 423 02a6 FF90      		pop r15
+ 424               	.LVL29:
+ 425 02a8 EF90      		pop r14
+ 426               	.LVL30:
+ 427 02aa DF90      		pop r13
+ 428 02ac CF90      		pop r12
+ 429 02ae 0895      		ret
+ 430               	.LFE16:
+ 432               	.global	shell_player_eof
+ 434               	shell_player_eof:
+ 435               	.LFB13:
+ 436               	.LM48:
+ 437               	/* prologue: function */
+ 438               	/* frame size = 0 */
+ 439               	.LM49:
+ 440 02b0 0E94 0000 		call player_stop
+ 441               	.LM50:
+ 442 02b4 8091 0000 		lds r24,player_fd
+ 443 02b8 9091 0000 		lds r25,(player_fd)+1
+ 444 02bc 0097      		sbiw r24,0
+ 445 02be 01F0      		breq .L27
+ 446               	.LM51:
+ 447 02c0 0E94 0000 		call fat_close_file
+ 448               	.L27:
+ 449               	.LM52:
+ 450 02c4 1092 0000 		sts IsPlaying,__zero_reg__
+ 451               	.LM53:
+ 452 02c8 00D0      		rcall .
+ 453 02ca 80E0      		ldi r24,lo8(__c.1963)
+ 454 02cc 90E0      		ldi r25,hi8(__c.1963)
+ 455 02ce EDB7      		in r30,__SP_L__
+ 456 02d0 FEB7      		in r31,__SP_H__
+ 457 02d2 9283      		std Z+2,r25
+ 458 02d4 8183      		std Z+1,r24
+ 459 02d6 0E94 0000 		call printf_P
+ 460 02da 0F90      		pop __tmp_reg__
+ 461 02dc 0F90      		pop __tmp_reg__
+ 462               	/* epilogue start */
+ 463               	.LM54:
+ 464 02de 0895      		ret
+ 465               	.LFE13:
+ 467               	.global	play_file
+ 469               	play_file:
+ 470               	.LFB14:
+ 471               	.LM55:
+ 472               	.LVL31:
+ 473 02e0 EF92      		push r14
+ 474 02e2 FF92      		push r15
+ 475 02e4 0F93      		push r16
+ 476 02e6 1F93      		push r17
+ 477 02e8 CF93      		push r28
+ 478 02ea DF93      		push r29
+ 479               	/* prologue: function */
+ 480               	/* frame size = 0 */
+ 481 02ec EC01      		movw r28,r24
+ 482 02ee 8B01      		movw r16,r22
+ 483 02f0 7A01      		movw r14,r20
+ 484               	.LM56:
+ 485 02f2 8091 0000 		lds r24,IsPlaying
+ 486               	.LVL32:
+ 487 02f6 8823      		tst r24
+ 488 02f8 01F0      		breq .L30
+ 489               	.LVL33:
+ 490               	.LM57:
+ 491 02fa 0E94 0000 		call player_stop
+ 492               	.LM58:
+ 493 02fe 8091 0000 		lds r24,player_fd
+ 494 0302 9091 0000 		lds r25,(player_fd)+1
+ 495 0306 0097      		sbiw r24,0
+ 496 0308 01F0      		breq .L31
+ 497               	.LM59:
+ 498 030a 0E94 0000 		call fat_close_file
+ 499               	.L31:
+ 500               	.LM60:
+ 501 030e 1092 0000 		sts IsPlaying,__zero_reg__
+ 502               	.LVL34:
+ 503               	.L30:
+ 504               	.LM61:
+ 505 0312 CE01      		movw r24,r28
+ 506 0314 B801      		movw r22,r16
+ 507 0316 A701      		movw r20,r14
+ 508 0318 0E94 0000 		call open_file_in_dir
+ 509 031c 9C01      		movw r18,r24
+ 510 031e 9093 0000 		sts (player_fd)+1,r25
+ 511 0322 8093 0000 		sts player_fd,r24
+ 512               	.LM62:
+ 513 0326 0097      		sbiw r24,0
+ 514 0328 01F4      		brne .L32
+ 515               	.LM63:
+ 516 032a 00D0      		rcall .
+ 517 032c 00D0      		rcall .
+ 518 032e 80E0      		ldi r24,lo8(__c.1971)
+ 519 0330 90E0      		ldi r25,hi8(__c.1971)
+ 520 0332 EDB7      		in r30,__SP_L__
+ 521 0334 FEB7      		in r31,__SP_H__
+ 522 0336 9283      		std Z+2,r25
+ 523 0338 8183      		std Z+1,r24
+ 524 033a F482      		std Z+4,r15
+ 525 033c E382      		std Z+3,r14
+ 526 033e 0E94 0000 		call printf_P
+ 527 0342 0F90      		pop __tmp_reg__
+ 528 0344 0F90      		pop __tmp_reg__
+ 529 0346 0F90      		pop __tmp_reg__
+ 530 0348 0F90      		pop __tmp_reg__
+ 531 034a 00C0      		rjmp .L34
+ 532               	.L32:
+ 533               	.LM64:
+ 534 034c 81E0      		ldi r24,lo8(1)
+ 535 034e 8093 0000 		sts IsPlaying,r24
+ 536               	.LM65:
+ 537 0352 C901      		movw r24,r18
+ 538 0354 60E0      		ldi r22,lo8(gs(shell_player_eof))
+ 539 0356 70E0      		ldi r23,hi8(gs(shell_player_eof))
+ 540 0358 0E94 0000 		call player_start
+ 541               	.L34:
+ 542               	/* epilogue start */
+ 543               	.LM66:
+ 544 035c DF91      		pop r29
+ 545 035e CF91      		pop r28
+ 546               	.LVL35:
+ 547 0360 1F91      		pop r17
+ 548 0362 0F91      		pop r16
+ 549               	.LVL36:
+ 550 0364 FF90      		pop r15
+ 551 0366 EF90      		pop r14
+ 552               	.LVL37:
+ 553 0368 0895      		ret
+ 554               	.LFE14:
+ 556               		.data
+ 557               	.LC0:
+ 558 0000 2F00      		.string	"/"
+ 559               		.text
+ 560               	.global	application_main
+ 562               	application_main:
+ 563               	.LFB15:
+ 564               	.LM67:
+ 565 036a 2F92      		push r2
+ 566 036c 3F92      		push r3
+ 567 036e 4F92      		push r4
+ 568 0370 5F92      		push r5
+ 569 0372 6F92      		push r6
+ 570 0374 7F92      		push r7
+ 571 0376 8F92      		push r8
+ 572 0378 9F92      		push r9
+ 573 037a AF92      		push r10
+ 574 037c BF92      		push r11
+ 575 037e CF92      		push r12
+ 576 0380 DF92      		push r13
+ 577 0382 EF92      		push r14
+ 578 0384 FF92      		push r15
+ 579 0386 0F93      		push r16
+ 580 0388 1F93      		push r17
+ 581 038a DF93      		push r29
+ 582 038c CF93      		push r28
+ 583 038e CDB7      		in r28,__SP_L__
+ 584 0390 DEB7      		in r29,__SP_H__
+ 585 0392 C458      		subi r28,lo8(-(-132))
+ 586 0394 D040      		sbci r29,hi8(-(-132))
+ 587 0396 0FB6      		in __tmp_reg__,__SREG__
+ 588 0398 F894      		cli
+ 589 039a DEBF      		out __SP_H__,r29
+ 590 039c 0FBE      		out __SREG__,__tmp_reg__
+ 591 039e CDBF      		out __SP_L__,r28
+ 592               	/* prologue: function */
+ 593               	/* frame size = 132 */
+ 594               	.LM68:
+ 595 03a0 83B7      		in r24,83-32
+ 596 03a2 817F      		andi r24,lo8(-15)
+ 597 03a4 83BF      		out 83-32,r24
+ 598               	.LBB50:
+ 599               	.LBB51:
+ 600               	.LBB52:
+ 601               	.LBB53:
+ 602               	.LM69:
+ 603 03a6 1092 C800 		sts 200,__zero_reg__
+ 604               	.LM70:
+ 605 03aa 88E1      		ldi r24,lo8(24)
+ 606 03ac 8093 C900 		sts 201,r24
+ 607               	.LM71:
+ 608 03b0 86E0      		ldi r24,lo8(6)
+ 609 03b2 8093 CA00 		sts 202,r24
+ 610               	.LM72:
+ 611 03b6 539A      		sbi 42-32,3
+ 612               	.LM73:
+ 613 03b8 5A9A      		sbi 43-32,2
+ 614               	.LM74:
+ 615 03ba 87E6      		ldi r24,lo8(103)
+ 616 03bc 90E0      		ldi r25,hi8(103)
+ 617 03be 9093 CD00 		sts (204)+1,r25
+ 618 03c2 8093 CC00 		sts 204,r24
+ 619               	.LBE53:
+ 620               	.LBE52:
+ 621               	.LM75:
+ 622 03c6 80E0      		ldi r24,lo8(USARTStream)
+ 623 03c8 90E0      		ldi r25,hi8(USARTStream)
+ 624 03ca 9093 0000 		sts (__iob+2)+1,r25
+ 625 03ce 8093 0000 		sts __iob+2,r24
+ 626               	.LBE51:
+ 627               	.LBE50:
+ 628               	.LBB54:
+ 629               	.LBB55:
+ 630               	.LM76:
+ 631 03d2 5DE0      		ldi r21,lo8(13)
+ 632 03d4 452E      		mov r4,r21
+ 633 03d6 512C      		mov r5,__zero_reg__
+ 634 03d8 4C0E      		add r4,r28
+ 635 03da 5D1E      		adc r5,r29
+ 636               	.LBB59:
+ 637               	.LM77:
+ 638 03dc CE01      		movw r24,r28
+ 639 03de 8E5A      		subi r24,lo8(-(82))
+ 640 03e0 9F4F      		sbci r25,hi8(-(82))
+ 641 03e2 CF57      		subi r28,lo8(-129)
+ 642 03e4 DF4F      		sbci r29,hi8(-129)
+ 643 03e6 9983      		std Y+1,r25
+ 644 03e8 8883      		st Y,r24
+ 645 03ea C158      		subi r28,lo8(129)
+ 646 03ec D040      		sbci r29,hi8(129)
+ 647               	.LBE59:
+ 648               	.LBB56:
+ 649               	.LM78:
+ 650 03ee DE01      		movw r26,r28
+ 651 03f0 1596      		adiw r26,5
+ 652 03f2 CD57      		subi r28,lo8(-131)
+ 653 03f4 DF4F      		sbci r29,hi8(-131)
+ 654 03f6 B983      		std Y+1,r27
+ 655 03f8 A883      		st Y,r26
+ 656 03fa C358      		subi r28,lo8(131)
+ 657 03fc D040      		sbci r29,hi8(131)
+ 658               	.LVL38:
+ 659               	.L85:
+ 660               	.LBE56:
+ 661               	.LBE55:
+ 662               	.LM79:
+ 663 03fe 0E94 0000 		call sd_raw_init
+ 664 0402 8823      		tst r24
+ 665 0404 01F4      		brne .L36
+ 666               	.LM80:
+ 667 0406 80E0      		ldi r24,lo8(__c.1978)
+ 668 0408 90E0      		ldi r25,hi8(__c.1978)
+ 669 040a 00C0      		rjmp .L87
+ 670               	.L36:
+ 671               	.LM81:
+ 672 040c 80E0      		ldi r24,lo8(gs(sd_raw_read))
+ 673 040e 90E0      		ldi r25,hi8(gs(sd_raw_read))
+ 674 0410 60E0      		ldi r22,lo8(gs(sd_raw_read_interval))
+ 675 0412 70E0      		ldi r23,hi8(gs(sd_raw_read_interval))
+ 676 0414 40E0      		ldi r20,lo8(gs(sd_raw_write))
+ 677 0416 50E0      		ldi r21,hi8(gs(sd_raw_write))
+ 678 0418 20E0      		ldi r18,lo8(gs(sd_raw_write_interval))
+ 679 041a 30E0      		ldi r19,hi8(gs(sd_raw_write_interval))
+ 680 041c 00E0      		ldi r16,lo8(0)
+ 681               	.LVL39:
+ 682 041e 0E94 0000 		call partition_open
+ 683 0422 C158      		subi r28,lo8(-127)
+ 684 0424 DF4F      		sbci r29,hi8(-127)
+ 685 0426 9983      		std Y+1,r25
+ 686 0428 8883      		st Y,r24
+ 687 042a CF57      		subi r28,lo8(127)
+ 688 042c D040      		sbci r29,hi8(127)
+ 689               	.LVL40:
+ 690               	.LM82:
+ 691 042e 892B      		or r24,r25
+ 692 0430 01F4      		brne .L38
+ 693               	.LM83:
+ 694 0432 80E0      		ldi r24,lo8(gs(sd_raw_read))
+ 695 0434 90E0      		ldi r25,hi8(gs(sd_raw_read))
+ 696 0436 60E0      		ldi r22,lo8(gs(sd_raw_read_interval))
+ 697 0438 70E0      		ldi r23,hi8(gs(sd_raw_read_interval))
+ 698 043a 40E0      		ldi r20,lo8(gs(sd_raw_write))
+ 699 043c 50E0      		ldi r21,hi8(gs(sd_raw_write))
+ 700 043e 20E0      		ldi r18,lo8(gs(sd_raw_write_interval))
+ 701 0440 30E0      		ldi r19,hi8(gs(sd_raw_write_interval))
+ 702 0442 0FEF      		ldi r16,lo8(-1)
+ 703 0444 0E94 0000 		call partition_open
+ 704 0448 C158      		subi r28,lo8(-127)
+ 705 044a DF4F      		sbci r29,hi8(-127)
+ 706 044c 9983      		std Y+1,r25
+ 707 044e 8883      		st Y,r24
+ 708 0450 CF57      		subi r28,lo8(127)
+ 709 0452 D040      		sbci r29,hi8(127)
+ 710               	.LVL41:
+ 711               	.LM84:
+ 712 0454 892B      		or r24,r25
+ 713 0456 01F4      		brne .L38
+ 714               	.LM85:
+ 715 0458 80E0      		ldi r24,lo8(__c.1982)
+ 716 045a 90E0      		ldi r25,hi8(__c.1982)
+ 717 045c 00C0      		rjmp .L87
+ 718               	.L38:
+ 719               	.LM86:
+ 720 045e C158      		subi r28,lo8(-127)
+ 721 0460 DF4F      		sbci r29,hi8(-127)
+ 722 0462 8881      		ld r24,Y
+ 723 0464 9981      		ldd r25,Y+1
+ 724 0466 CF57      		subi r28,lo8(127)
+ 725 0468 D040      		sbci r29,hi8(127)
+ 726 046a 0E94 0000 		call fat_open
+ 727 046e 4C01      		movw r8,r24
+ 728               	.LM87:
+ 729 0470 0097      		sbiw r24,0
+ 730 0472 01F4      		brne .L39
+ 731               	.LVL42:
+ 732               	.LM88:
+ 733 0474 80E0      		ldi r24,lo8(__c.1985)
+ 734 0476 90E0      		ldi r25,hi8(__c.1985)
+ 735               	.LVL43:
+ 736 0478 00C0      		rjmp .L87
+ 737               	.LVL44:
+ 738               	.L39:
+ 739               	.LM89:
+ 740 047a 8E01      		movw r16,r28
+ 741 047c 0B5D      		subi r16,lo8(-(37))
+ 742 047e 1F4F      		sbci r17,hi8(-(37))
+ 743 0480 60E0      		ldi r22,lo8(.LC0)
+ 744 0482 70E0      		ldi r23,hi8(.LC0)
+ 745 0484 A801      		movw r20,r16
+ 746 0486 0E94 0000 		call fat_get_dir_entry_of_path
+ 747               	.LVL45:
+ 748               	.LM90:
+ 749 048a C401      		movw r24,r8
+ 750 048c B801      		movw r22,r16
+ 751 048e 0E94 0000 		call fat_open_dir
+ 752 0492 3C01      		movw r6,r24
+ 753               	.LM91:
+ 754 0494 0097      		sbiw r24,0
+ 755 0496 01F4      		brne .L40
+ 756               	.LVL46:
+ 757               	.LM92:
+ 758 0498 80E0      		ldi r24,lo8(__c.1989)
+ 759 049a 90E0      		ldi r25,hi8(__c.1989)
+ 760               	.LVL47:
+ 761               	.L87:
+ 762 049c 0E94 0000 		call uart_puts_p
+ 763 04a0 00C0      		rjmp .L85
+ 764               	.LVL48:
+ 765               	.L40:
+ 766               	.LM93:
+ 767 04a2 C401      		movw r24,r8
+ 768               	.LVL49:
+ 769 04a4 0E94 0000 		call print_disk_info
+ 770               	.LBB73:
+ 771               	.LBB62:
+ 772               	.LBB60:
+ 773               	.LM94:
+ 774 04a8 44E2      		ldi r20,lo8(36)
+ 775 04aa 242E      		mov r2,r20
+ 776               	.LVL50:
+ 777               	.L84:
+ 778               	.LBE60:
+ 779               	.LBE62:
+ 780               	.LM95:
+ 781 04ac 8EE3      		ldi r24,lo8(62)
+ 782 04ae 0E94 0000 		call uart_putc
+ 783               	.LM96:
+ 784 04b2 80E2      		ldi r24,lo8(32)
+ 785 04b4 0E94 0000 		call uart_putc
+ 786               	.LM97:
+ 787 04b8 C201      		movw r24,r4
+ 788 04ba 68E1      		ldi r22,lo8(24)
+ 789 04bc 0E94 0000 		call read_line
+ 790 04c0 8823      		tst r24
+ 791 04c2 01F0      		breq .L84
+ 792               	.LM98:
+ 793 04c4 C201      		movw r24,r4
+ 794 04c6 60E0      		ldi r22,lo8(__c.1994)
+ 795 04c8 70E0      		ldi r23,hi8(__c.1994)
+ 796 04ca 0E94 0000 		call strcmp_P
+ 797 04ce 892B      		or r24,r25
+ 798 04d0 01F4      		brne .+2
+ 799 04d2 00C0      		rjmp .L42
+ 800               	.LM99:
+ 801 04d4 C201      		movw r24,r4
+ 802 04d6 60E0      		ldi r22,lo8(__c.1997)
+ 803 04d8 70E0      		ldi r23,hi8(__c.1997)
+ 804 04da 43E0      		ldi r20,lo8(3)
+ 805 04dc 50E0      		ldi r21,hi8(3)
+ 806 04de 0E94 0000 		call strncmp_P
+ 807 04e2 892B      		or r24,r25
+ 808 04e4 01F4      		brne .L43
+ 809               	.LBB63:
+ 810               	.LM100:
+ 811 04e6 8889      		ldd r24,Y+16
+ 812 04e8 8823      		tst r24
+ 813 04ea 01F0      		breq .L84
+ 814               	.LM101:
+ 815 04ec C401      		movw r24,r8
+ 816 04ee B301      		movw r22,r6
+ 817 04f0 AE01      		movw r20,r28
+ 818 04f2 405F      		subi r20,lo8(-(16))
+ 819 04f4 5F4F      		sbci r21,hi8(-(16))
+ 820 04f6 9E01      		movw r18,r28
+ 821 04f8 2E5A      		subi r18,lo8(-(82))
+ 822 04fa 3F4F      		sbci r19,hi8(-(82))
+ 823 04fc 0E94 0000 		call find_file_in_dir
+ 824 0500 8823      		tst r24
+ 825 0502 01F0      		breq .L44
+ 826               	.LBB64:
+ 827               	.LM102:
+ 828 0504 C401      		movw r24,r8
+ 829 0506 BE01      		movw r22,r28
+ 830 0508 6E5A      		subi r22,lo8(-(82))
+ 831 050a 7F4F      		sbci r23,hi8(-(82))
+ 832 050c 0E94 0000 		call fat_open_dir
+ 833 0510 8C01      		movw r16,r24
+ 834               	.LVL51:
+ 835               	.LM103:
+ 836 0512 0097      		sbiw r24,0
+ 837 0514 01F0      		breq .L44
+ 838               	.LVL52:
+ 839               	.LM104:
+ 840 0516 C301      		movw r24,r6
+ 841               	.LVL53:
+ 842 0518 0E94 0000 		call fat_close_dir
+ 843 051c 3801      		movw r6,r16
+ 844 051e 00C0      		rjmp .L84
+ 845               	.LVL54:
+ 846               	.L44:
+ 847               	.LBE64:
+ 848               	.LM105:
+ 849 0520 80E0      		ldi r24,lo8(__c.2001)
+ 850 0522 90E0      		ldi r25,hi8(__c.2001)
+ 851 0524 00C0      		rjmp .L91
+ 852               	.L43:
+ 853               	.LBE63:
+ 854               	.LM106:
+ 855 0526 C201      		movw r24,r4
+ 856 0528 60E0      		ldi r22,lo8(__c.2003)
+ 857 052a 70E0      		ldi r23,hi8(__c.2003)
+ 858 052c 0E94 0000 		call strcmp_P
+ 859 0530 892B      		or r24,r25
+ 860 0532 01F0      		breq .L83
+ 861 0534 00C0      		rjmp .L95
+ 862               	.L51:
+ 863               	.LBB65:
+ 864               	.LBB61:
+ 865               	.LM107:
+ 866 0536 CF57      		subi r28,lo8(-129)
+ 867 0538 DF4F      		sbci r29,hi8(-129)
+ 868 053a E881      		ld r30,Y
+ 869 053c F981      		ldd r31,Y+1
+ 870 053e C158      		subi r28,lo8(129)
+ 871 0540 D040      		sbci r29,hi8(129)
+ 872 0542 0190      		ld __tmp_reg__,Z+
+ 873 0544 0020      		tst __tmp_reg__
+ 874 0546 01F4      		brne .-6
+ 875 0548 8F01      		movw r16,r30
+ 876               	.LVL55:
+ 877 054a 0150      		subi r16,lo8(-(-1))
+ 878 054c 1040      		sbci r17,hi8(-(-1))
+ 879 054e CF57      		subi r28,lo8(-129)
+ 880 0550 DF4F      		sbci r29,hi8(-129)
+ 881 0552 8881      		ld r24,Y
+ 882 0554 9981      		ldd r25,Y+1
+ 883 0556 C158      		subi r28,lo8(129)
+ 884 0558 D040      		sbci r29,hi8(129)
+ 885 055a 081B      		sub r16,r24
+ 886 055c 190B      		sbc r17,r25
+ 887               	.LM108:
+ 888 055e CE01      		movw r24,r28
+ 889 0560 8E5A      		subi r24,lo8(-(82))
+ 890 0562 9F4F      		sbci r25,hi8(-(82))
+ 891 0564 0E94 0000 		call uart_puts
+ 892               	.LM109:
+ 893 0568 E396      		adiw r28,114-63
+ 894 056a 8FAD      		ldd r24,Y+63
+ 895 056c E397      		sbiw r28,114-63
+ 896 056e 84FD      		sbrc r24,4
+ 897 0570 00C0      		rjmp .L47
+ 898 0572 80E2      		ldi r24,lo8(32)
+ 899 0574 00C0      		rjmp .L48
+ 900               	.L47:
+ 901 0576 8FE2      		ldi r24,lo8(47)
+ 902               	.L48:
+ 903               	.LM110:
+ 904 0578 122D      		mov r17,r2
+ 905               	.LVL56:
+ 906 057a 101B      		sub r17,r16
+ 907               	.LM111:
+ 908 057c 0E94 0000 		call uart_putc
+ 909 0580 00C0      		rjmp .L49
+ 910               	.L50:
+ 911               	.LM112:
+ 912 0582 80E2      		ldi r24,lo8(32)
+ 913 0584 0E94 0000 		call uart_putc
+ 914 0588 1150      		subi r17,lo8(-(-1))
+ 915               	.L49:
+ 916               	.LM113:
+ 917 058a 1123      		tst r17
+ 918 058c 01F4      		brne .L50
+ 919               	.LM114:
+ 920 058e EB96      		adiw r28,119-60
+ 921 0590 6CAD      		ldd r22,Y+60
+ 922 0592 7DAD      		ldd r23,Y+61
+ 923 0594 8EAD      		ldd r24,Y+62
+ 924 0596 9FAD      		ldd r25,Y+63
+ 925 0598 EB97      		sbiw r28,119-60
+ 926 059a 0E94 0000 		call uart_putdw_dec
+ 927               	.LM115:
+ 928 059e 8AE0      		ldi r24,lo8(10)
+ 929 05a0 0E94 0000 		call uart_putc
+ 930               	.LVL57:
+ 931               	.L83:
+ 932               	.LBE61:
+ 933               	.LM116:
+ 934 05a4 C301      		movw r24,r6
+ 935 05a6 BE01      		movw r22,r28
+ 936 05a8 6E5A      		subi r22,lo8(-(82))
+ 937 05aa 7F4F      		sbci r23,hi8(-(82))
+ 938 05ac 0E94 0000 		call fat_read_dir
+ 939 05b0 8823      		tst r24
+ 940 05b2 01F4      		brne .L51
+ 941 05b4 00C0      		rjmp .L84
+ 942               	.L95:
+ 943               	.LBE65:
+ 944               	.LM117:
+ 945 05b6 C201      		movw r24,r4
+ 946 05b8 60E0      		ldi r22,lo8(__c.2013)
+ 947 05ba 70E0      		ldi r23,hi8(__c.2013)
+ 948 05bc 44E0      		ldi r20,lo8(4)
+ 949 05be 50E0      		ldi r21,hi8(4)
+ 950 05c0 0E94 0000 		call strncmp_P
+ 951 05c4 892B      		or r24,r25
+ 952 05c6 01F0      		breq .+2
+ 953 05c8 00C0      		rjmp .L52
+ 954               	.LBB66:
+ 955               	.LM118:
+ 956 05ca 8989      		ldd r24,Y+17
+ 957 05cc 8823      		tst r24
+ 958 05ce 01F4      		brne .+2
+ 959 05d0 00C0      		rjmp .L84
+ 960               	.LM119:
+ 961 05d2 8E01      		movw r16,r28
+ 962               	.LVL58:
+ 963 05d4 0F5E      		subi r16,lo8(-(17))
+ 964 05d6 1F4F      		sbci r17,hi8(-(17))
+ 965 05d8 C401      		movw r24,r8
+ 966 05da B301      		movw r22,r6
+ 967 05dc A801      		movw r20,r16
+ 968 05de 0E94 0000 		call open_file_in_dir
+ 969 05e2 5C01      		movw r10,r24
+ 970               	.LM120:
+ 971 05e4 0097      		sbiw r24,0
+ 972 05e6 01F0      		breq .L53
+ 973               	.LVL59:
+ 974 05e8 CC24      		clr r12
+ 975 05ea DD24      		clr r13
+ 976 05ec 7601      		movw r14,r12
+ 977 05ee 00C0      		rjmp .L54
+ 978               	.L53:
+ 979               	.LM121:
+ 980 05f0 80E0      		ldi r24,lo8(__c.2016)
+ 981 05f2 90E0      		ldi r25,hi8(__c.2016)
+ 982               	.LVL60:
+ 983               	.L92:
+ 984 05f4 0E94 0000 		call uart_puts_p
+ 985               	.LM122:
+ 986 05f8 C801      		movw r24,r16
+ 987               	.LVL61:
+ 988               	.L88:
+ 989 05fa 0E94 0000 		call uart_puts
+ 990               	.LM123:
+ 991 05fe 8AE0      		ldi r24,lo8(10)
+ 992 0600 0E94 0000 		call uart_putc
+ 993 0604 00C0      		rjmp .L84
+ 994               	.LVL62:
+ 995               	.L59:
+ 996               	.LM124:
+ 997 0606 C701      		movw r24,r14
+ 998 0608 B601      		movw r22,r12
+ 999 060a 0E94 0000 		call uart_putdw_hex
+ 1000               	.LVL63:
+ 1001               	.LM125:
+ 1002 060e 8AE3      		ldi r24,lo8(58)
+ 1003 0610 0E94 0000 		call uart_putc
+ 1004 0614 8E01      		movw r16,r28
+ 1005 0616 0B5F      		subi r16,lo8(-(5))
+ 1006 0618 1F4F      		sbci r17,hi8(-(5))
+ 1007               	.L55:
+ 1008               	.LBB57:
+ 1009               	.LM126:
+ 1010 061a 80E2      		ldi r24,lo8(32)
+ 1011 061c 0E94 0000 		call uart_putc
+ 1012               	.LM127:
+ 1013 0620 D801      		movw r26,r16
+ 1014 0622 8D91      		ld r24,X+
+ 1015 0624 8D01      		movw r16,r26
+ 1016 0626 0E94 0000 		call uart_putc_hex
+ 1017               	.LM128:
+ 1018 062a 0415      		cp r16,r4
+ 1019 062c 1505      		cpc r17,r5
+ 1020 062e 01F4      		brne .L55
+ 1021               	.LBE57:
+ 1022               	.LM129:
+ 1023 0630 80E2      		ldi r24,lo8(32)
+ 1024 0632 0E94 0000 		call uart_putc
+ 1025 0636 8E01      		movw r16,r28
+ 1026 0638 0B5F      		subi r16,lo8(-(5))
+ 1027 063a 1F4F      		sbci r17,hi8(-(5))
+ 1028               	.L58:
+ 1029               	.LBB58:
+ 1030               	.LM130:
+ 1031 063c F801      		movw r30,r16
+ 1032 063e 9081      		ld r25,Z
+ 1033 0640 892F      		mov r24,r25
+ 1034 0642 8052      		subi r24,lo8(-(-32))
+ 1035 0644 8F35      		cpi r24,lo8(95)
+ 1036 0646 00F4      		brsh .L56
+ 1037               	.LM131:
+ 1038 0648 892F      		mov r24,r25
+ 1039 064a 00C0      		rjmp .L93
+ 1040               	.L56:
+ 1041               	.LM132:
+ 1042 064c 8EE2      		ldi r24,lo8(46)
+ 1043               	.L93:
+ 1044 064e 0E94 0000 		call uart_putc
+ 1045 0652 0F5F      		subi r16,lo8(-(1))
+ 1046 0654 1F4F      		sbci r17,hi8(-(1))
+ 1047               	.LM133:
+ 1048 0656 802F      		mov r24,r16
+ 1049 0658 CD57      		subi r28,lo8(-131)
+ 1050 065a DF4F      		sbci r29,hi8(-131)
+ 1051 065c F881      		ld r31,Y
+ 1052 065e C358      		subi r28,lo8(131)
+ 1053 0660 D040      		sbci r29,hi8(131)
+ 1054 0662 8F1B      		sub r24,r31
+ 1055 0664 8315      		cp r24,r3
+ 1056 0666 00F0      		brlo .L58
+ 1057               	.LBE58:
+ 1058               	.LM134:
+ 1059 0668 8AE0      		ldi r24,lo8(10)
+ 1060 066a 0E94 0000 		call uart_putc
+ 1061               	.LM135:
+ 1062 066e 88E0      		ldi r24,lo8(8)
+ 1063 0670 90E0      		ldi r25,hi8(8)
+ 1064 0672 A0E0      		ldi r26,hlo8(8)
+ 1065 0674 B0E0      		ldi r27,hhi8(8)
+ 1066 0676 C80E      		add r12,r24
+ 1067 0678 D91E      		adc r13,r25
+ 1068 067a EA1E      		adc r14,r26
+ 1069 067c FB1E      		adc r15,r27
+ 1070               	.LVL64:
+ 1071               	.L54:
+ 1072               	.LM136:
+ 1073 067e C501      		movw r24,r10
+ 1074 0680 BE01      		movw r22,r28
+ 1075 0682 6B5F      		subi r22,lo8(-(5))
+ 1076 0684 7F4F      		sbci r23,hi8(-(5))
+ 1077 0686 48E0      		ldi r20,lo8(8)
+ 1078 0688 50E0      		ldi r21,hi8(8)
+ 1079 068a 0E94 0000 		call fat_read_file
+ 1080 068e 382E      		mov r3,r24
+ 1081 0690 8823      		tst r24
+ 1082 0692 01F0      		breq .+2
+ 1083 0694 00C0      		rjmp .L59
+ 1084               	.LVL65:
+ 1085               	.LM137:
+ 1086 0696 C501      		movw r24,r10
+ 1087               	.LVL66:
+ 1088 0698 00C0      		rjmp .L89
+ 1089               	.LVL67:
+ 1090               	.L52:
+ 1091               	.LBE66:
+ 1092               	.LM138:
+ 1093 069a C201      		movw r24,r4
+ 1094 069c 60E0      		ldi r22,lo8(__c.2032)
+ 1095 069e 70E0      		ldi r23,hi8(__c.2032)
+ 1096 06a0 0E94 0000 		call strcmp_P
+ 1097 06a4 892B      		or r24,r25
+ 1098 06a6 01F4      		brne .L60
+ 1099               	.LM139:
+ 1100 06a8 C401      		movw r24,r8
+ 1101 06aa 0E94 0000 		call print_disk_info
+ 1102 06ae 8823      		tst r24
+ 1103 06b0 01F0      		breq .+2
+ 1104 06b2 00C0      		rjmp .L84
+ 1105               	.LM140:
+ 1106 06b4 80E0      		ldi r24,lo8(__c.2034)
+ 1107 06b6 90E0      		ldi r25,hi8(__c.2034)
+ 1108 06b8 00C0      		rjmp .L90
+ 1109               	.L60:
+ 1110               	.LM141:
+ 1111 06ba C201      		movw r24,r4
+ 1112 06bc 60E0      		ldi r22,lo8(__c.2036)
+ 1113 06be 70E0      		ldi r23,hi8(__c.2036)
+ 1114 06c0 43E0      		ldi r20,lo8(3)
+ 1115 06c2 50E0      		ldi r21,hi8(3)
+ 1116 06c4 0E94 0000 		call strncmp_P
+ 1117 06c8 892B      		or r24,r25
+ 1118 06ca 01F4      		brne .L61
+ 1119               	.LBB67:
+ 1120               	.LM142:
+ 1121 06cc 8889      		ldd r24,Y+16
+ 1122 06ce 8823      		tst r24
+ 1123 06d0 01F4      		brne .+2
+ 1124 06d2 00C0      		rjmp .L84
+ 1125               	.LM143:
+ 1126 06d4 C401      		movw r24,r8
+ 1127 06d6 B301      		movw r22,r6
+ 1128 06d8 AE01      		movw r20,r28
+ 1129 06da 405F      		subi r20,lo8(-(16))
+ 1130 06dc 5F4F      		sbci r21,hi8(-(16))
+ 1131 06de 9E01      		movw r18,r28
+ 1132 06e0 2E5A      		subi r18,lo8(-(82))
+ 1133 06e2 3F4F      		sbci r19,hi8(-(82))
+ 1134 06e4 0E94 0000 		call find_file_in_dir
+ 1135 06e8 8823      		tst r24
+ 1136 06ea 01F0      		breq .L62
+ 1137               	.LM144:
+ 1138 06ec C401      		movw r24,r8
+ 1139 06ee BE01      		movw r22,r28
+ 1140 06f0 6E5A      		subi r22,lo8(-(82))
+ 1141 06f2 7F4F      		sbci r23,hi8(-(82))
+ 1142 06f4 0E94 0000 		call fat_delete_file
+ 1143 06f8 8823      		tst r24
+ 1144 06fa 01F0      		breq .+2
+ 1145 06fc 00C0      		rjmp .L84
+ 1146               	.L62:
+ 1147               	.LM145:
+ 1148 06fe 80E0      		ldi r24,lo8(__c.2039)
+ 1149 0700 90E0      		ldi r25,hi8(__c.2039)
+ 1150               	.L91:
+ 1151 0702 0E94 0000 		call uart_puts_p
+ 1152               	.LM146:
+ 1153 0706 CE01      		movw r24,r28
+ 1154 0708 4096      		adiw r24,16
+ 1155 070a 00C0      		rjmp .L88
+ 1156               	.L61:
+ 1157               	.LBE67:
+ 1158               	.LM147:
+ 1159 070c C201      		movw r24,r4
+ 1160 070e 60E0      		ldi r22,lo8(__c.2041)
+ 1161 0710 70E0      		ldi r23,hi8(__c.2041)
+ 1162 0712 46E0      		ldi r20,lo8(6)
+ 1163 0714 50E0      		ldi r21,hi8(6)
+ 1164 0716 0E94 0000 		call strncmp_P
+ 1165 071a 892B      		or r24,r25
+ 1166 071c 01F4      		brne .L63
+ 1167               	.LBB68:
+ 1168               	.LM148:
+ 1169 071e 8B89      		ldd r24,Y+19
+ 1170 0720 8823      		tst r24
+ 1171 0722 01F4      		brne .+2
+ 1172 0724 00C0      		rjmp .L84
+ 1173               	.LM149:
+ 1174 0726 C301      		movw r24,r6
+ 1175 0728 BE01      		movw r22,r28
+ 1176 072a 6D5E      		subi r22,lo8(-(19))
+ 1177 072c 7F4F      		sbci r23,hi8(-(19))
+ 1178 072e AE01      		movw r20,r28
+ 1179 0730 4E5A      		subi r20,lo8(-(82))
+ 1180 0732 5F4F      		sbci r21,hi8(-(82))
+ 1181 0734 0E94 0000 		call fat_create_file
+ 1182 0738 8823      		tst r24
+ 1183 073a 01F0      		breq .+2
+ 1184 073c 00C0      		rjmp .L84
+ 1185               	.LM150:
+ 1186 073e 80E0      		ldi r24,lo8(__c.2044)
+ 1187 0740 90E0      		ldi r25,hi8(__c.2044)
+ 1188 0742 0E94 0000 		call uart_puts_p
+ 1189               	.LM151:
+ 1190 0746 CE01      		movw r24,r28
+ 1191 0748 4396      		adiw r24,19
+ 1192 074a 00C0      		rjmp .L88
+ 1193               	.L63:
+ 1194               	.LBE68:
+ 1195               	.LM152:
+ 1196 074c C201      		movw r24,r4
+ 1197 074e 60E0      		ldi r22,lo8(__c.2046)
+ 1198 0750 70E0      		ldi r23,hi8(__c.2046)
+ 1199 0752 46E0      		ldi r20,lo8(6)
+ 1200 0754 50E0      		ldi r21,hi8(6)
+ 1201 0756 0E94 0000 		call strncmp_P
+ 1202 075a 892B      		or r24,r25
+ 1203 075c 01F0      		breq .+2
+ 1204 075e 00C0      		rjmp .L64
+ 1205               	.LBB69:
+ 1206               	.LM153:
+ 1207 0760 8B89      		ldd r24,Y+19
+ 1208 0762 8823      		tst r24
+ 1209 0764 01F4      		brne .+2
+ 1210 0766 00C0      		rjmp .L84
+ 1211               	.LM154:
+ 1212 0768 8E01      		movw r16,r28
+ 1213               	.LVL68:
+ 1214 076a 0D5E      		subi r16,lo8(-(19))
+ 1215 076c 1F4F      		sbci r17,hi8(-(19))
+ 1216 076e 00C0      		rjmp .L65
+ 1217               	.L67:
+ 1218               	.LM155:
+ 1219 0770 0F5F      		subi r16,lo8(-(1))
+ 1220 0772 1F4F      		sbci r17,hi8(-(1))
+ 1221               	.L65:
+ 1222               	.LM156:
+ 1223 0774 D801      		movw r26,r16
+ 1224 0776 8C91      		ld r24,X
+ 1225 0778 8032      		cpi r24,lo8(32)
+ 1226 077a 01F0      		breq .L66
+ 1227 077c 8823      		tst r24
+ 1228 077e 01F4      		brne .L67
+ 1229 0780 00C0      		rjmp .L84
+ 1230               	.L66:
+ 1231               	.LM157:
+ 1232 0782 F801      		movw r30,r16
+ 1233 0784 1082      		st Z,__zero_reg__
+ 1234               	.LM158:
+ 1235 0786 33E1      		ldi r19,lo8(19)
+ 1236 0788 C32E      		mov r12,r19
+ 1237 078a D12C      		mov r13,__zero_reg__
+ 1238               	.LVL69:
+ 1239 078c CC0E      		add r12,r28
+ 1240 078e DD1E      		adc r13,r29
+ 1241 0790 C401      		movw r24,r8
+ 1242 0792 B301      		movw r22,r6
+ 1243 0794 A601      		movw r20,r12
+ 1244 0796 0E94 0000 		call open_file_in_dir
+ 1245 079a 7C01      		movw r14,r24
+ 1246               	.LM159:
+ 1247 079c 0097      		sbiw r24,0
+ 1248 079e 01F0      		breq .L68
+ 1249               	.LVL70:
+ 1250 07a0 20E0      		ldi r18,lo8(0)
+ 1251 07a2 30E0      		ldi r19,hi8(0)
+ 1252 07a4 40E0      		ldi r20,hlo8(0)
+ 1253 07a6 50E0      		ldi r21,hhi8(0)
+ 1254               	.LVL71:
+ 1255 07a8 00C0      		rjmp .L69
+ 1256               	.LVL72:
+ 1257               	.L68:
+ 1258               	.LM160:
+ 1259 07aa 80E0      		ldi r24,lo8(__c.2053)
+ 1260 07ac 90E0      		ldi r25,hi8(__c.2053)
+ 1261               	.LVL73:
+ 1262 07ae 0E94 0000 		call uart_puts_p
+ 1263               	.LM161:
+ 1264 07b2 C601      		movw r24,r12
+ 1265 07b4 00C0      		rjmp .L88
+ 1266               	.LVL74:
+ 1267               	.L70:
+ 1268               	.LBB70:
+ 1269               	.LBB71:
+ 1270               	.LM162:
+ 1271 07b6 CA01      		movw r24,r20
+ 1272 07b8 B901      		movw r22,r18
+ 1273 07ba 2AE0      		ldi r18,lo8(10)
+ 1274 07bc 30E0      		ldi r19,hi8(10)
+ 1275 07be 40E0      		ldi r20,hlo8(10)
+ 1276 07c0 50E0      		ldi r21,hhi8(10)
+ 1277               	.LVL75:
+ 1278 07c2 0E94 0000 		call __mulsi3
+ 1279 07c6 9B01      		movw r18,r22
+ 1280 07c8 AC01      		movw r20,r24
+ 1281               	.LVL76:
+ 1282 07ca 8D2D      		mov r24,r13
+ 1283 07cc 90E0      		ldi r25,lo8(0)
+ 1284 07ce C097      		sbiw r24,48
+ 1285 07d0 AA27      		clr r26
+ 1286 07d2 97FD      		sbrc r25,7
+ 1287 07d4 A095      		com r26
+ 1288 07d6 BA2F      		mov r27,r26
+ 1289 07d8 280F      		add r18,r24
+ 1290 07da 391F      		adc r19,r25
+ 1291 07dc 4A1F      		adc r20,r26
+ 1292 07de 5B1F      		adc r21,r27
+ 1293               	.LVL77:
+ 1294               	.L69:
+ 1295               	.LM163:
+ 1296 07e0 D801      		movw r26,r16
+ 1297               	.LVL78:
+ 1298 07e2 1196      		adiw r26,1
+ 1299 07e4 DC90      		ld r13,X
+ 1300 07e6 0F5F      		subi r16,lo8(-(1))
+ 1301 07e8 1F4F      		sbci r17,hi8(-(1))
+ 1302 07ea 8D2D      		mov r24,r13
+ 1303 07ec 8053      		subi r24,lo8(-(-48))
+ 1304 07ee 8A30      		cpi r24,lo8(10)
+ 1305 07f0 00F0      		brlo .L70
+ 1306               	.LBE71:
+ 1307               	.LBE70:
+ 1308               	.LM164:
+ 1309 07f2 2983      		std Y+1,r18
+ 1310 07f4 3A83      		std Y+2,r19
+ 1311 07f6 4B83      		std Y+3,r20
+ 1312 07f8 5C83      		std Y+4,r21
+ 1313               	.LVL79:
+ 1314               	.LM165:
+ 1315 07fa C701      		movw r24,r14
+ 1316 07fc BE01      		movw r22,r28
+ 1317 07fe 6F5F      		subi r22,lo8(-(1))
+ 1318 0800 7F4F      		sbci r23,hi8(-(1))
+ 1319 0802 40E0      		ldi r20,lo8(0)
+ 1320 0804 0E94 0000 		call fat_seek_file
+ 1321               	.LVL80:
+ 1322 0808 8823      		tst r24
+ 1323 080a 01F4      		brne .L78
+ 1324               	.LM166:
+ 1325 080c 80E0      		ldi r24,lo8(__c.2056)
+ 1326 080e 90E0      		ldi r25,hi8(__c.2056)
+ 1327 0810 0E94 0000 		call uart_puts_p
+ 1328               	.LM167:
+ 1329 0814 CE01      		movw r24,r28
+ 1330 0816 4396      		adiw r24,19
+ 1331 0818 0E94 0000 		call uart_puts
+ 1332               	.LM168:
+ 1333 081c 8AE0      		ldi r24,lo8(10)
+ 1334 081e 0E94 0000 		call uart_putc
+ 1335               	.LVL81:
+ 1336               	.L94:
+ 1337               	.LM169:
+ 1338 0822 C701      		movw r24,r14
+ 1339               	.LVL82:
+ 1340               	.L89:
+ 1341 0824 0E94 0000 		call fat_close_file
+ 1342 0828 00C0      		rjmp .L84
+ 1343               	.LVL83:
+ 1344               	.L78:
+ 1345               	.LM170:
+ 1346 082a 8CE3      		ldi r24,lo8(60)
+ 1347 082c 0E94 0000 		call uart_putc
+ 1348               	.LVL84:
+ 1349               	.LM171:
+ 1350 0830 80E2      		ldi r24,lo8(32)
+ 1351 0832 0E94 0000 		call uart_putc
+ 1352               	.LM172:
+ 1353 0836 C201      		movw r24,r4
+ 1354 0838 68E1      		ldi r22,lo8(24)
+ 1355 083a 0E94 0000 		call read_line
+ 1356 083e 182F      		mov r17,r24
+ 1357               	.LVL85:
+ 1358               	.LM173:
+ 1359 0840 8823      		tst r24
+ 1360 0842 01F0      		breq .L94
+ 1361               	.LVL86:
+ 1362               	.LM174:
+ 1363 0844 C701      		movw r24,r14
+ 1364               	.LVL87:
+ 1365 0846 B201      		movw r22,r4
+ 1366 0848 412F      		mov r20,r17
+ 1367 084a 50E0      		ldi r21,lo8(0)
+ 1368 084c 0E94 0000 		call fat_write_file
+ 1369 0850 212F      		mov r18,r17
+ 1370 0852 30E0      		ldi r19,lo8(0)
+ 1371               	.LVL88:
+ 1372 0854 8217      		cp r24,r18
+ 1373 0856 9307      		cpc r25,r19
+ 1374 0858 01F0      		breq .L78
+ 1375               	.LVL89:
+ 1376               	.LM175:
+ 1377 085a 80E0      		ldi r24,lo8(__c.2060)
+ 1378 085c 90E0      		ldi r25,hi8(__c.2060)
+ 1379 085e 0E94 0000 		call uart_puts_p
+ 1380               	.LVL90:
+ 1381 0862 00C0      		rjmp .L94
+ 1382               	.LVL91:
+ 1383               	.L64:
+ 1384               	.LBE69:
+ 1385               	.LM176:
+ 1386 0864 C201      		movw r24,r4
+ 1387 0866 60E0      		ldi r22,lo8(__c.2063)
+ 1388 0868 70E0      		ldi r23,hi8(__c.2063)
+ 1389 086a 46E0      		ldi r20,lo8(6)
+ 1390 086c 50E0      		ldi r21,hi8(6)
+ 1391 086e 0E94 0000 		call strncmp_P
+ 1392 0872 892B      		or r24,r25
+ 1393 0874 01F4      		brne .L73
+ 1394               	.LBB72:
+ 1395               	.LM177:
+ 1396 0876 8B89      		ldd r24,Y+19
+ 1397 0878 8823      		tst r24
+ 1398 087a 01F4      		brne .+2
+ 1399 087c 00C0      		rjmp .L84
+ 1400               	.LM178:
+ 1401 087e 8E01      		movw r16,r28
+ 1402               	.LVL92:
+ 1403 0880 0D5E      		subi r16,lo8(-(19))
+ 1404 0882 1F4F      		sbci r17,hi8(-(19))
+ 1405 0884 C301      		movw r24,r6
+ 1406 0886 B801      		movw r22,r16
+ 1407 0888 AE01      		movw r20,r28
+ 1408 088a 4E5A      		subi r20,lo8(-(82))
+ 1409 088c 5F4F      		sbci r21,hi8(-(82))
+ 1410 088e 0E94 0000 		call fat_create_dir
+ 1411 0892 8823      		tst r24
+ 1412 0894 01F0      		breq .+2
+ 1413 0896 00C0      		rjmp .L84
+ 1414               	.LM179:
+ 1415 0898 80E0      		ldi r24,lo8(__c.2066)
+ 1416 089a 90E0      		ldi r25,hi8(__c.2066)
+ 1417 089c 00C0      		rjmp .L92
+ 1418               	.LVL93:
+ 1419               	.L73:
+ 1420               	.LBE72:
+ 1421               	.LM180:
+ 1422 089e C201      		movw r24,r4
+ 1423 08a0 60E0      		ldi r22,lo8(__c.2068)
+ 1424 08a2 70E0      		ldi r23,hi8(__c.2068)
+ 1425 08a4 0E94 0000 		call strcmp_P
+ 1426 08a8 892B      		or r24,r25
+ 1427 08aa 01F4      		brne .L74
+ 1428               	.LM181:
+ 1429 08ac 0E94 0000 		call sd_raw_sync
+ 1430 08b0 8823      		tst r24
+ 1431 08b2 01F0      		breq .+2
+ 1432 08b4 00C0      		rjmp .L84
+ 1433               	.LM182:
+ 1434 08b6 80E0      		ldi r24,lo8(__c.2070)
+ 1435 08b8 90E0      		ldi r25,hi8(__c.2070)
+ 1436               	.L90:
+ 1437 08ba 0E94 0000 		call uart_puts_p
+ 1438 08be 00C0      		rjmp .L84
+ 1439               	.L74:
+ 1440               	.LM183:
+ 1441 08c0 C201      		movw r24,r4
+ 1442 08c2 60E0      		ldi r22,lo8(__c.2072)
+ 1443 08c4 70E0      		ldi r23,hi8(__c.2072)
+ 1444 08c6 45E0      		ldi r20,lo8(5)
+ 1445 08c8 50E0      		ldi r21,hi8(5)
+ 1446 08ca 0E94 0000 		call strncmp_P
+ 1447 08ce 892B      		or r24,r25
+ 1448 08d0 01F4      		brne .L75
+ 1449               	.LM184:
+ 1450 08d2 8A89      		ldd r24,Y+18
+ 1451 08d4 8823      		tst r24
+ 1452 08d6 01F4      		brne .+2
+ 1453 08d8 00C0      		rjmp .L84
+ 1454               	.LM185:
+ 1455 08da C401      		movw r24,r8
+ 1456 08dc B301      		movw r22,r6
+ 1457 08de AE01      		movw r20,r28
+ 1458 08e0 4E5E      		subi r20,lo8(-(18))
+ 1459 08e2 5F4F      		sbci r21,hi8(-(18))
+ 1460 08e4 0E94 0000 		call play_file
+ 1461 08e8 00C0      		rjmp .L84
+ 1462               	.L75:
+ 1463               	.LM186:
+ 1464 08ea 80E0      		ldi r24,lo8(__c.2074)
+ 1465 08ec 90E0      		ldi r25,hi8(__c.2074)
+ 1466 08ee 0E94 0000 		call uart_puts_p
+ 1467               	.LM187:
+ 1468 08f2 C201      		movw r24,r4
+ 1469 08f4 00C0      		rjmp .L88
+ 1470               	.L42:
+ 1471               	.LBE73:
+ 1472               	.LM188:
+ 1473 08f6 C401      		movw r24,r8
+ 1474 08f8 0E94 0000 		call fat_close
+ 1475               	.LM189:
+ 1476 08fc C158      		subi r28,lo8(-127)
+ 1477 08fe DF4F      		sbci r29,hi8(-127)
+ 1478 0900 8881      		ld r24,Y
+ 1479 0902 9981      		ldd r25,Y+1
+ 1480 0904 CF57      		subi r28,lo8(127)
+ 1481 0906 D040      		sbci r29,hi8(127)
+ 1482 0908 0E94 0000 		call partition_close
+ 1483 090c 00C0      		rjmp .L85
+ 1484               	.LBE54:
+ 1485               	.LFE15:
+ 1487               		.section	.progmem.data,"a",@progbits
+ 1490               	__c.2074:
+ 1491 0000 756E 6B6E 		.string	"unknown command: "
+ 1491      6F77 6E20 
+ 1491      636F 6D6D 
+ 1491      616E 643A 
+ 1491      2000 
+ 1494               	__c.2072:
+ 1495 0012 706C 6179 		.string	"play "
+ 1495      2000 
+ 1498               	__c.2070:
+ 1499 0018 6572 726F 		.string	"error syncing disk\n"
+ 1499      7220 7379 
+ 1499      6E63 696E 
+ 1499      6720 6469 
+ 1499      736B 0A00 
+ 1502               	__c.2068:
+ 1503 002c 7379 6E63 		.string	"sync"
+ 1503      00
+ 1506               	__c.2066:
+ 1507 0031 6572 726F 		.string	"error creating directory: "
+ 1507      7220 6372 
+ 1507      6561 7469 
+ 1507      6E67 2064 
+ 1507      6972 6563 
+ 1510               	__c.2063:
+ 1511 004c 6D6B 6469 		.string	"mkdir "
+ 1511      7220 00
+ 1514               	__c.2060:
+ 1515 0053 6572 726F 		.string	"error writing to file\n"
+ 1515      7220 7772 
+ 1515      6974 696E 
+ 1515      6720 746F 
+ 1515      2066 696C 
+ 1518               	__c.2056:
+ 1519 006a 6572 726F 		.string	"error seeking on "
+ 1519      7220 7365 
+ 1519      656B 696E 
+ 1519      6720 6F6E 
+ 1519      2000 
+ 1522               	__c.2053:
+ 1523 007c 6572 726F 		.string	"error opening "
+ 1523      7220 6F70 
+ 1523      656E 696E 
+ 1523      6720 00
+ 1526               	__c.2046:
+ 1527 008b 7772 6974 		.string	"write "
+ 1527      6520 00
+ 1530               	__c.2044:
+ 1531 0092 6572 726F 		.string	"error creating file: "
+ 1531      7220 6372 
+ 1531      6561 7469 
+ 1531      6E67 2066 
+ 1531      696C 653A 
+ 1534               	__c.2041:
+ 1535 00a8 746F 7563 		.string	"touch "
+ 1535      6820 00
+ 1538               	__c.2039:
+ 1539 00af 6572 726F 		.string	"error deleting file: "
+ 1539      7220 6465 
+ 1539      6C65 7469 
+ 1539      6E67 2066 
+ 1539      696C 653A 
+ 1542               	__c.2036:
+ 1543 00c5 726D 2000 		.string	"rm "
+ 1546               	__c.2034:
+ 1547 00c9 6572 726F 		.string	"error reading disk info\n"
+ 1547      7220 7265 
+ 1547      6164 696E 
+ 1547      6720 6469 
+ 1547      736B 2069 
+ 1550               	__c.2032:
+ 1551 00e2 6469 736B 		.string	"disk"
+ 1551      00
+ 1554               	__c.2016:
+ 1555 00e7 6572 726F 		.string	"error opening "
+ 1555      7220 6F70 
+ 1555      656E 696E 
+ 1555      6720 00
+ 1558               	__c.2013:
+ 1559 00f6 6361 7420 		.string	"cat "
+ 1559      00
+ 1562               	__c.2003:
+ 1563 00fb 6C73 00   		.string	"ls"
+ 1566               	__c.2001:
+ 1567 00fe 6469 7265 		.string	"directory not found: "
+ 1567      6374 6F72 
+ 1567      7920 6E6F 
+ 1567      7420 666F 
+ 1567      756E 643A 
+ 1570               	__c.1997:
+ 1571 0114 6364 2000 		.string	"cd "
+ 1574               	__c.1994:
+ 1575 0118 696E 6974 		.string	"init"
+ 1575      00
+ 1578               	__c.1989:
+ 1579 011d 6F70 656E 		.string	"opening root directory failed\n"
+ 1579      696E 6720 
+ 1579      726F 6F74 
+ 1579      2064 6972 
+ 1579      6563 746F 
+ 1582               	__c.1985:
+ 1583 013c 6F70 656E 		.string	"opening filesystem failed\n"
+ 1583      696E 6720 
+ 1583      6669 6C65 
+ 1583      7379 7374 
+ 1583      656D 2066 
+ 1586               	__c.1982:
+ 1587 0157 6F70 656E 		.string	"opening partition failed\n"
+ 1587      696E 6720 
+ 1587      7061 7274 
+ 1587      6974 696F 
+ 1587      6E20 6661 
+ 1590               	__c.1978:
+ 1591 0171 4D4D 432F 		.string	"MMC/SD initialization failed\n"
+ 1591      5344 2069 
+ 1591      6E69 7469 
+ 1591      616C 697A 
+ 1591      6174 696F 
+ 1594               	__c.2214:
+ 1595 018f 6672 6565 		.string	"free:   "
+ 1595      3A20 2020 
+ 1595      00
+ 1598               	__c.2212:
+ 1599 0198 666F 726D 		.string	"format: "
+ 1599      6174 3A20 
+ 1599      00
+ 1602               	__c.2210:
+ 1603 01a1 7772 2E70 		.string	"wr.pr.: "
+ 1603      722E 3A20 
+ 1603      00
+ 1606               	__c.2208:
+ 1607 01aa 636F 7079 		.string	"copy:   "
+ 1607      3A20 2020 
+ 1607      00
+ 1610               	__c.2206:
+ 1611 01b3 4D42 0A00 		.string	"MB\n"
+ 1614               	__c.2204:
+ 1615 01b7 7369 7A65 		.string	"size:   "
+ 1615      3A20 2020 
+ 1615      00
+ 1618               	__c.2202:
+ 1619 01c0 6461 7465 		.string	"date:   "
+ 1619      3A20 2020 
+ 1619      00
+ 1622               	__c.2200:
+ 1623 01c9 7365 7269 		.string	"serial: 0x"
+ 1623      616C 3A20 
+ 1623      3078 00
+ 1626               	__c.2198:
+ 1627 01d4 7265 763A 		.string	"rev:    "
+ 1627      2020 2020 
+ 1627      00
+ 1630               	__c.2196:
+ 1631 01dd 7072 6F64 		.string	"prod:   "
+ 1631      3A20 2020 
+ 1631      00
+ 1634               	__c.2194:
+ 1635 01e6 6F65 6D3A 		.string	"oem:    "
+ 1635      2020 2020 
+ 1635      00
+ 1638               	__c.2192:
+ 1639 01ef 6D61 6E75 		.string	"manuf:  0x"
+ 1639      663A 2020 
+ 1639      3078 00
+ 1640               		.lcomm IsPlaying,1
+ 1641               		.lcomm player_fd,2
+ 1644               	__c.1971:
+ 1645 01fa 6572 726F 		.string	"error opening %s\r\n"
+ 1645      7220 6F70 
+ 1645      656E 696E 
+ 1645      6720 2573 
+ 1645      0D0A 00
+ 1648               	__c.1963:
+ 1649 020d 456E 6420 		.string	"End of file\r\n"
+ 1649      6F66 2066 
+ 1649      696C 650D 
+ 1649      0A00 
+ 1722               	.Letext0:
+DEFINED SYMBOLS
+                            *ABS*:00000000 shell.c
+/var/folders/hh/hhtmCPxAFD0g-dt-xVOMP++++TI/-Tmp-//cc6lI806.s:2      *ABS*:0000003f __SREG__
+/var/folders/hh/hhtmCPxAFD0g-dt-xVOMP++++TI/-Tmp-//cc6lI806.s:3      *ABS*:0000003e __SP_H__
+/var/folders/hh/hhtmCPxAFD0g-dt-xVOMP++++TI/-Tmp-//cc6lI806.s:4      *ABS*:0000003d __SP_L__
+/var/folders/hh/hhtmCPxAFD0g-dt-xVOMP++++TI/-Tmp-//cc6lI806.s:5      *ABS*:00000034 __CCP__
+/var/folders/hh/hhtmCPxAFD0g-dt-xVOMP++++TI/-Tmp-//cc6lI806.s:6      *ABS*:00000000 __tmp_reg__
+/var/folders/hh/hhtmCPxAFD0g-dt-xVOMP++++TI/-Tmp-//cc6lI806.s:7      *ABS*:00000001 __zero_reg__
+/var/folders/hh/hhtmCPxAFD0g-dt-xVOMP++++TI/-Tmp-//cc6lI806.s:17     .text:00000000 print_disk_info
+/var/folders/hh/hhtmCPxAFD0g-dt-xVOMP++++TI/-Tmp-//cc6lI806.s:1638   .progmem.data:000001ef __c.2192
+/var/folders/hh/hhtmCPxAFD0g-dt-xVOMP++++TI/-Tmp-//cc6lI806.s:1634   .progmem.data:000001e6 __c.2194
+/var/folders/hh/hhtmCPxAFD0g-dt-xVOMP++++TI/-Tmp-//cc6lI806.s:1630   .progmem.data:000001dd __c.2196
+/var/folders/hh/hhtmCPxAFD0g-dt-xVOMP++++TI/-Tmp-//cc6lI806.s:1626   .progmem.data:000001d4 __c.2198
+/var/folders/hh/hhtmCPxAFD0g-dt-xVOMP++++TI/-Tmp-//cc6lI806.s:1622   .progmem.data:000001c9 __c.2200
+/var/folders/hh/hhtmCPxAFD0g-dt-xVOMP++++TI/-Tmp-//cc6lI806.s:1618   .progmem.data:000001c0 __c.2202
+/var/folders/hh/hhtmCPxAFD0g-dt-xVOMP++++TI/-Tmp-//cc6lI806.s:1614   .progmem.data:000001b7 __c.2204
+/var/folders/hh/hhtmCPxAFD0g-dt-xVOMP++++TI/-Tmp-//cc6lI806.s:1610   .progmem.data:000001b3 __c.2206
+/var/folders/hh/hhtmCPxAFD0g-dt-xVOMP++++TI/-Tmp-//cc6lI806.s:1606   .progmem.data:000001aa __c.2208
+/var/folders/hh/hhtmCPxAFD0g-dt-xVOMP++++TI/-Tmp-//cc6lI806.s:1602   .progmem.data:000001a1 __c.2210
+/var/folders/hh/hhtmCPxAFD0g-dt-xVOMP++++TI/-Tmp-//cc6lI806.s:1598   .progmem.data:00000198 __c.2212
+/var/folders/hh/hhtmCPxAFD0g-dt-xVOMP++++TI/-Tmp-//cc6lI806.s:1594   .progmem.data:0000018f __c.2214
+/var/folders/hh/hhtmCPxAFD0g-dt-xVOMP++++TI/-Tmp-//cc6lI806.s:199    .text:0000017e find_file_in_dir
+/var/folders/hh/hhtmCPxAFD0g-dt-xVOMP++++TI/-Tmp-//cc6lI806.s:254    .text:000001c2 open_file_in_dir
+/var/folders/hh/hhtmCPxAFD0g-dt-xVOMP++++TI/-Tmp-//cc6lI806.s:315    .text:0000021e read_line
+/var/folders/hh/hhtmCPxAFD0g-dt-xVOMP++++TI/-Tmp-//cc6lI806.s:434    .text:000002b0 shell_player_eof
+/var/folders/hh/hhtmCPxAFD0g-dt-xVOMP++++TI/-Tmp-//cc6lI806.s:1640   .bss:00000001 player_fd
+                             .bss:00000000 IsPlaying
+/var/folders/hh/hhtmCPxAFD0g-dt-xVOMP++++TI/-Tmp-//cc6lI806.s:1648   .progmem.data:0000020d __c.1963
+/var/folders/hh/hhtmCPxAFD0g-dt-xVOMP++++TI/-Tmp-//cc6lI806.s:469    .text:000002e0 play_file
+/var/folders/hh/hhtmCPxAFD0g-dt-xVOMP++++TI/-Tmp-//cc6lI806.s:1644   .progmem.data:000001fa __c.1971
+/var/folders/hh/hhtmCPxAFD0g-dt-xVOMP++++TI/-Tmp-//cc6lI806.s:562    .text:0000036a application_main
+/var/folders/hh/hhtmCPxAFD0g-dt-xVOMP++++TI/-Tmp-//cc6lI806.s:1590   .progmem.data:00000171 __c.1978
+/var/folders/hh/hhtmCPxAFD0g-dt-xVOMP++++TI/-Tmp-//cc6lI806.s:1586   .progmem.data:00000157 __c.1982
+/var/folders/hh/hhtmCPxAFD0g-dt-xVOMP++++TI/-Tmp-//cc6lI806.s:1582   .progmem.data:0000013c __c.1985
+/var/folders/hh/hhtmCPxAFD0g-dt-xVOMP++++TI/-Tmp-//cc6lI806.s:1578   .progmem.data:0000011d __c.1989
+/var/folders/hh/hhtmCPxAFD0g-dt-xVOMP++++TI/-Tmp-//cc6lI806.s:1574   .progmem.data:00000118 __c.1994
+/var/folders/hh/hhtmCPxAFD0g-dt-xVOMP++++TI/-Tmp-//cc6lI806.s:1570   .progmem.data:00000114 __c.1997
+/var/folders/hh/hhtmCPxAFD0g-dt-xVOMP++++TI/-Tmp-//cc6lI806.s:1566   .progmem.data:000000fe __c.2001
+/var/folders/hh/hhtmCPxAFD0g-dt-xVOMP++++TI/-Tmp-//cc6lI806.s:1562   .progmem.data:000000fb __c.2003
+/var/folders/hh/hhtmCPxAFD0g-dt-xVOMP++++TI/-Tmp-//cc6lI806.s:1558   .progmem.data:000000f6 __c.2013
+/var/folders/hh/hhtmCPxAFD0g-dt-xVOMP++++TI/-Tmp-//cc6lI806.s:1554   .progmem.data:000000e7 __c.2016
+/var/folders/hh/hhtmCPxAFD0g-dt-xVOMP++++TI/-Tmp-//cc6lI806.s:1550   .progmem.data:000000e2 __c.2032
+/var/folders/hh/hhtmCPxAFD0g-dt-xVOMP++++TI/-Tmp-//cc6lI806.s:1546   .progmem.data:000000c9 __c.2034
+/var/folders/hh/hhtmCPxAFD0g-dt-xVOMP++++TI/-Tmp-//cc6lI806.s:1542   .progmem.data:000000c5 __c.2036
+/var/folders/hh/hhtmCPxAFD0g-dt-xVOMP++++TI/-Tmp-//cc6lI806.s:1538   .progmem.data:000000af __c.2039
+/var/folders/hh/hhtmCPxAFD0g-dt-xVOMP++++TI/-Tmp-//cc6lI806.s:1534   .progmem.data:000000a8 __c.2041
+/var/folders/hh/hhtmCPxAFD0g-dt-xVOMP++++TI/-Tmp-//cc6lI806.s:1530   .progmem.data:00000092 __c.2044
+/var/folders/hh/hhtmCPxAFD0g-dt-xVOMP++++TI/-Tmp-//cc6lI806.s:1526   .progmem.data:0000008b __c.2046
+/var/folders/hh/hhtmCPxAFD0g-dt-xVOMP++++TI/-Tmp-//cc6lI806.s:1522   .progmem.data:0000007c __c.2053
+/var/folders/hh/hhtmCPxAFD0g-dt-xVOMP++++TI/-Tmp-//cc6lI806.s:1518   .progmem.data:0000006a __c.2056
+/var/folders/hh/hhtmCPxAFD0g-dt-xVOMP++++TI/-Tmp-//cc6lI806.s:1514   .progmem.data:00000053 __c.2060
+/var/folders/hh/hhtmCPxAFD0g-dt-xVOMP++++TI/-Tmp-//cc6lI806.s:1510   .progmem.data:0000004c __c.2063
+/var/folders/hh/hhtmCPxAFD0g-dt-xVOMP++++TI/-Tmp-//cc6lI806.s:1506   .progmem.data:00000031 __c.2066
+/var/folders/hh/hhtmCPxAFD0g-dt-xVOMP++++TI/-Tmp-//cc6lI806.s:1502   .progmem.data:0000002c __c.2068
+/var/folders/hh/hhtmCPxAFD0g-dt-xVOMP++++TI/-Tmp-//cc6lI806.s:1498   .progmem.data:00000018 __c.2070
+/var/folders/hh/hhtmCPxAFD0g-dt-xVOMP++++TI/-Tmp-//cc6lI806.s:1494   .progmem.data:00000012 __c.2072
+/var/folders/hh/hhtmCPxAFD0g-dt-xVOMP++++TI/-Tmp-//cc6lI806.s:1490   .progmem.data:00000000 __c.2074
+
+UNDEFINED SYMBOLS
+sd_raw_get_info
+uart_puts_p
+uart_putc_hex
+uart_putc
+uart_puts
+uart_putdw_hex
+uart_putw_dec
+uart_putdw_dec
+fat_get_fs_free
+fat_get_fs_size
+strcmp
+fat_reset_dir
+fat_read_dir
+fat_open_file
+memset
+uart_getc
+player_stop
+fat_close_file
+printf_P
+player_start
+USARTStream
+__iob
+sd_raw_init
+sd_raw_read
+sd_raw_read_interval
+sd_raw_write
+sd_raw_write_interval
+partition_open
+fat_open
+fat_get_dir_entry_of_path
+fat_open_dir
+strcmp_P
+strncmp_P
+fat_close_dir
+fat_read_file
+fat_delete_file
+fat_create_file
+__mulsi3
+fat_seek_file
+fat_write_file
+fat_create_dir
+sd_raw_sync
+fat_close
+partition_close
+__do_copy_data
+__do_clear_bss
