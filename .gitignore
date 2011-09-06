@@ -6,5 +6,12 @@
 *.d
 *.lst
 
+*.eep
+*.elf
+*.hex
+*.lss
+*.map
+*.sym
+
 # Can also ignore all directories and files in a directory.
 #tmp/**/*
