@@ -20,8 +20,8 @@
   this software.
 */
 
-#ifndef PLAY_H
-#define PLAY_H
+#ifndef PLAYER_H
+#define PLAYER_H
 
 typedef void (*t_notify_eof)(void);
 
@@ -30,4 +30,4 @@ void player_stop(void);
 void player_pause(void);
 void player_resume(void);
 
-#endif
+#endif /* PLAYER_H */

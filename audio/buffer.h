@@ -23,7 +23,7 @@
 #ifndef BUFFER_H
 #define BUFFER_H
 
-#define PCM_BUFFER_SIZE (512)
+#define PCM_BUFFER_SIZE (256)
 
 extern uint8_t pcm_buffer[2 * PCM_BUFFER_SIZE];
 

@@ -27,8 +27,6 @@ void adc_init(void);
 void adc_shutdown(void);
 void adc_start(uint8_t* buffer0, uint8_t* buffer1, uint16_t size);
 void adc_stop(void);
-void adc_pause(void);
-void adc_resume(void);
 
 extern volatile uint8_t buffer_full_flag;
 void adc_timer_handler(void);

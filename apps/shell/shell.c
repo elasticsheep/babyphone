@@ -18,7 +18,9 @@
 #include "uart.h"
 
 #include <stdio.h>
+
 #include "player.h"
+#include "recorder.h"
 
 #include "adc.h"
 #include "buffer.h"
@@ -26,191 +28,6 @@
 #include "LUFA/Drivers/Peripheral/SerialStream.h"
 
 #define DEBUG 1
-
-/**
- * \mainpage MMC/SD/SDHC card library
- *
- * This project provides a general purpose library which implements read and write
- * support for MMC, SD and SDHC memory cards.
- *
- * It includes
- * - low-level \link sd_raw MMC, SD and SDHC read/write routines \endlink
- * - \link partition partition table support \endlink
- * - a simple \link fat FAT16/FAT32 read/write implementation \endlink
- *
- * \section circuit The circuit
- * The circuit which was mainly used during development consists of an Atmel AVR
- * microcontroller with some passive components. It is quite simple and provides
- * an easy test environment. The circuit which can be downloaded on the
- * <a href="http://www.roland-riegel.de/sd-reader/">project homepage</a> has been
- * improved with regard to operation stability.
- *
- * I used different microcontrollers during development, the ATmega8 with 8kBytes
- * of flash, and its pin-compatible alternative, the ATmega168 with 16kBytes flash.
- * The first one is the one I started with, but when I implemented FAT16 write
- * support, I ran out of flash space and switched to the ATmega168. For FAT32, an
- * ATmega328 is required.
- * 
- * The circuit board is a self-made and self-soldered board consisting of a single
- * copper layer and standard DIL components, except of the MMC/SD card connector.
- *
- * The connector is soldered to the bottom side of the board. It has a simple
- * eject button which, when a card is inserted, needs some space beyond the connector
- * itself. As an additional feature the connector has two electrical switches
- * to detect wether a card is inserted and wether this card is write-protected.
- * 
- * \section pictures Pictures
- * \image html pic01.jpg "The circuit board used to implement and test this application."
- * \image html pic02.jpg "The MMC/SD card connector on the soldering side of the circuit board."
- *
- * \section software The software
- * The software is written in pure standard ANSI-C. It might not be the smallest or
- * the fastest one, but I think it is quite flexible. See the project's
- * <a href="http://www.roland-riegel.de/sd-reader/benchmarks/">benchmark page</a> to get an
- * idea of the possible data rates.
- *
- * I implemented an example application providing a simple command prompt which is accessible
- * via the UART at 9600 Baud. With commands similiar to the Unix shell you can browse different
- * directories, read and write files, create new ones and delete them again. Not all commands are
- * available in all software configurations.
- * - <tt>cat \<file\></tt>\n
- *   Writes a hexdump of \<file\> to the terminal.
- * - <tt>cd \<directory\></tt>\n
- *   Changes current working directory to \<directory\>.
- * - <tt>disk</tt>\n
- *   Shows card manufacturer, status, filesystem capacity and free storage space.
- * - <tt>init</tt>\n
- *   Reinitializes and reopens the memory card.
- * - <tt>ls</tt>\n
- *   Shows the content of the current directory.
- * - <tt>mkdir \<directory\></tt>\n
- *   Creates a directory called \<directory\>.
- * - <tt>rm \<file\></tt>\n
- *   Deletes \<file\>.
- * - <tt>sync</tt>\n
- *   Ensures all buffered data is written to the card.
- * - <tt>touch \<file\></tt>\n
- *   Creates \<file\>.
- * - <tt>write \<file\> \<offset\></tt>\n
- *   Writes text to \<file\>, starting from \<offset\>. The text is read
- *   from the UART, line by line. Finish with an empty line.
- *
- * \htmlonly
- * <p>
- * The following table shows some typical code sizes in bytes, using the 20090330 release with a
- * buffered read-write MMC/SD configuration, FAT16 and static memory allocation:
- * </p>
- *
- * <table border="1" cellpadding="2">
- *     <tr>
- *         <th>layer</th>
- *         <th>code size</th>
- *         <th>static RAM usage</th>
- *     </tr>
- *     <tr>
- *         <td>MMC/SD</td>
- *         <td align="right">2410</td>
- *         <td align="right">518</td>
- *     </tr>
- *     <tr>
- *         <td>Partition</td>
- *         <td align="right">456</td>
- *         <td align="right">17</td>
- *     </tr>
- *     <tr>
- *         <td>FAT16</td>
- *         <td align="right">7928</td>
- *         <td align="right">188</td>
- *     </tr>
- * </table>
- *
- * <p>
- * The static RAM is mostly used for buffering memory card access, which
- * improves performance and reduces implementation complexity.
- * </p>
- * 
- * <p>
- * Please note that the numbers above do not include the C library functions
- * used, e.g. some string functions. These will raise the numbers somewhat
- * if they are not already used in other program parts.
- * </p>
- * 
- * <p>
- * When opening a partition, filesystem, file or directory, a little amount
- * of RAM is used, as listed in the following table. Depending on the library
- * configuration, the memory is either allocated statically or dynamically.
- * </p>
- *
- * <table border="1" cellpadding="2">
- *     <tr>
- *         <th>descriptor</th>
- *         <th>dynamic/static RAM</th>
- *     </tr>
- *     <tr>
- *         <td>partition</td>
- *         <td align="right">17</td>
- *     </tr>
- *     <tr>
- *         <td>filesystem</td>
- *         <td align="right">26</td>
- *     </tr>
- *     <tr>
- *         <td>file</td>
- *         <td align="right">53</td>
- *     </tr>
- *     <tr>
- *         <td>directory</td>
- *         <td align="right">49</td>
- *     </tr>
- * </table>
- * 
- * \endhtmlonly
- *
- * \section adaptation Adapting the software to your needs
- * The only hardware dependent part is the communication layer talking to the
- * memory card. The other parts like partition table and FAT support are
- * completely independent, you could use them even for managing Compact Flash
- * cards or standard ATAPI hard disks.
- *
- * By changing the MCU* variables in the Makefile, you can use other Atmel
- * microcontrollers or different clock speeds. You might also want to change
- * the configuration defines in the files fat_config.h, partition_config.h,
- * sd_raw_config.h and sd-reader_config.h. For example, you could disable
- * write support completely if you only need read support.
- *
- * For further information, visit the project's
- * <a href="http://www.roland-riegel.de/sd-reader/faq/">FAQ page</a>.
- * 
- * \section bugs Bugs or comments?
- * If you have comments or found a bug in the software - there might be some
- * of them - you may contact me per mail at feedback@roland-riegel.de.
- *
- * \section acknowledgements Acknowledgements
- * Thanks go to Ulrich Radig, who explained on his homepage how to interface
- * MMC cards to the Atmel microcontroller (http://www.ulrichradig.de/).
- * I adapted his work for my circuit. Although this is a very simple
- * solution, I had no problems using it.
- * 
- * \section copyright Copyright 2006-2009 by Roland Riegel
- * This program is free software; you can redistribute it and/or modify it under
- * the terms of the GNU General Public License version 2 as published by
- * the Free Software Foundation (http://www.gnu.org/copyleft/gpl.html).
- * At your option, you can alternatively redistribute and/or modify the following
- * files under the terms of the GNU Lesser General Public License version 2.1
- * as published by the Free Software Foundation (http://www.gnu.org/copyleft/lgpl.html):
- * - byteordering.c
- * - byteordering.h
- * - fat.c
- * - fat.h
- * - fat_config.h
- * - partition.c
- * - partition.h
- * - partition_config.h
- * - sd_raw.c
- * - sd_raw.h
- * - sd_raw_config.h
- * - sd-reader_config.h
- */
 
 static uint8_t read_line(char* buffer, uint8_t buffer_length);
 static uint32_t strtolong(const char* str);
@@ -220,6 +37,9 @@ static uint8_t print_disk_info(const struct fat_fs_struct* fs);
 
 static uint8_t IsPlaying = 0;
 static struct fat_file_struct* player_fd = NULL;
+
+static uint8_t IsRecording = 0;
+static struct fat_file_struct* recorder_fd = NULL;
 
 void shell_player_eof(void)
 {
@@ -264,12 +84,122 @@ void play_file(struct fat_fs_struct* fs, struct fat_dir_struct* dd, const char* 
   player_start(player_fd, &shell_player_eof);
 }
 
+void fill1_file(struct fat_fs_struct* fs, struct fat_dir_struct* dd, const char* name)
+{
+  uint32_t i, j;
+  
+  /* Create an empty file */
+  struct fat_dir_entry_struct file_entry;
+  
+  printf_P(PSTR("Create file %s...\r\n"), name);
+  if(!fat_create_file(dd, name, &file_entry))
+  {
+      //printf_P(PSTR("error creating %s\r\n "), name);
+  }
+  
+  /* search file in current directory and open it */
+  printf_P(PSTR("Open file..."));
+  recorder_fd = open_file_in_dir(fs, dd, name);
+  if(!recorder_fd)
+  {
+      printf_P(PSTR("error opening %s\r\n"), name);
+      return;
+  }
+
+  for(j = 1; j < 2; j++)
+  {
+    for(i = 0; i < 512; i++)
+      pcm_buffer[i] = j;
+      
+    printf_P(PSTR("Write to file..."));
+    fat_write_file(recorder_fd, pcm_buffer, 512);
+  }
+
+  /* Close the file */
+  printf_P(PSTR("Close file..."));
+  fat_close_file(recorder_fd);
+}
+
+void fill2_file(struct fat_fs_struct* fs, struct fat_dir_struct* dd, const char* name)
+{
+  uint32_t i, j;
+  
+  /* Create an empty file */
+  struct fat_dir_entry_struct file_entry;
+  
+  printf_P(PSTR("Create file %s...\r\n"), name);
+  if(!fat_create_file(dd, name, &file_entry))
+  {
+      //printf_P(PSTR("error creating %s\r\n "), name);
+  }
+  
+  /* search file in current directory and open it */
+  printf_P(PSTR("Open file..."));
+  recorder_fd = open_file_in_dir(fs, dd, name);
+  if(!recorder_fd)
+  {
+      printf_P(PSTR("error opening %s\r\n"), name);
+      return;
+  }
+
+  fat_write_file_prologue(recorder_fd);
+
+  for(j = 1; j < 2; j++)
+  {
+    for(i = 0; i < 512; i++)
+      pcm_buffer[i] = j << 2;
+      
+    printf_P(PSTR("Write to file..."));
+    fat_write_file_write(recorder_fd, pcm_buffer, 512);
+  }
+  
+  fat_write_file_epilogue(recorder_fd);
+  
+  /* Close the file */
+  printf_P(PSTR("Close file..."));
+  fat_close_file(recorder_fd);
+}
+
+void record_file(struct fat_fs_struct* fs, struct fat_dir_struct* dd, const char* name)
+{
+  /* Create an empty file */
+  struct fat_dir_entry_struct file_entry;
+  
+  printf_P(PSTR("Create file %s...\r\n"), name);
+  if(!fat_create_file(dd, name, &file_entry))
+  {
+      //printf_P(PSTR("error creating %s\r\n "), name);
+  }
+  
+  /* search file in current directory and open it */
+  printf_P(PSTR("Open file..."));
+  recorder_fd = open_file_in_dir(fs, dd, name);
+  if(!recorder_fd)
+  {
+      printf_P(PSTR("error opening %s\r\n"), name);
+      return;
+  }
+
+  /* Start the recording */
+  recorder_start(recorder_fd);
+  
+  /* Record during 5 seconds */
+  delay_ms(1000);
+  
+  /* Stop the recording */
+  recorder_stop();
+  
+  /* Close the file */
+  printf_P(PSTR("Close file..."));
+  fat_close_file(recorder_fd);
+}
+
 int application_main()
 {
     /* we will just use ordinary idle mode */
     set_sleep_mode(SLEEP_MODE_IDLE);
 
-    SerialStream_Init(9600, false);
+    SerialStream_Init(38400, false);
 
     while(1)
     {
@@ -584,6 +514,30 @@ int application_main()
               
                 adc_init();
                 adc_start(&pcm_buffer[0], &pcm_buffer[PCM_BUFFER_SIZE], PCM_BUFFER_SIZE);
+            }
+            else if(strncmp_P(command, PSTR("record "), 7) == 0)
+            {
+                command += 7;
+                if(command[0] == '\0')
+                    continue;
+              
+                record_file(fs, dd, command);
+            }
+            else if(strncmp_P(command, PSTR("fill1 "), 6) == 0)
+            {
+                command += 6;
+                if(command[0] == '\0')
+                    continue;
+              
+                fill1_file(fs, dd, command);
+            }
+            else if(strncmp_P(command, PSTR("fill2 "), 6) == 0)
+            {
+                command += 6;
+                if(command[0] == '\0')
+                    continue;
+              
+                fill2_file(fs, dd, command);
             }
             else
             {

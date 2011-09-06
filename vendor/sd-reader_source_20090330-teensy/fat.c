@@ -20,6 +20,9 @@
     #include <stdlib.h>
 #endif
 
+#include <avr/pgmspace.h>
+#include <stdio.h>
+
 /**
  * \addtogroup fat FAT support
  *
@@ -1152,6 +1155,136 @@ intptr_t fat_write_file(struct fat_file_struct* fd, const uint8_t* buffer, uintp
     }
 
     return buffer_len - buffer_left;
+}
+
+static uint16_t _cluster_size;
+static cluster_t _cluster_num;
+static uint16_t _first_cluster_offset;
+static uintptr_t _buffer_left;
+
+intptr_t fat_write_file_prologue(struct fat_file_struct* fd)
+{
+    /* check arguments */
+    if(!fd)
+        return -1;
+    if(fd->pos > fd->dir_entry.file_size)
+        return -1;
+
+    _cluster_size = fd->fs->header.cluster_size;
+    _cluster_num = fd->pos_cluster;
+    _first_cluster_offset = (uint16_t) (fd->pos & (_cluster_size - 1));
+
+    /* find cluster in which to start writing */
+    if(!_cluster_num)
+    {
+        _cluster_num = fd->dir_entry.cluster;
+        
+        if(!_cluster_num)
+        {
+            if(!fd->pos)
+            {
+                /* empty file */
+                fd->dir_entry.cluster = _cluster_num = fat_append_clusters(fd->fs, 0, 1);
+                if(!_cluster_num)
+                    return -1;
+            }
+            else
+            {
+                return -1;
+            }
+        }
+
+        if(fd->pos)
+        {
+            uint32_t pos = fd->pos;
+            cluster_t cluster_num_next;
+            while(pos >= _cluster_size)
+            {
+                pos -= _cluster_size;
+                cluster_num_next = fat_get_next_cluster(fd->fs, _cluster_num);
+                if(!cluster_num_next && pos == 0)
+                    /* the file exactly ends on a cluster boundary, and we append to it */
+                    cluster_num_next = fat_append_clusters(fd->fs, _cluster_num, 1);
+                if(!cluster_num_next)
+                    return -1;
+
+                _cluster_num = cluster_num_next;
+            }
+        }
+    }
+    
+    return 0;
+}
+
+intptr_t fat_write_file_write(struct fat_file_struct* fd, const uint8_t* buffer, uintptr_t buffer_len)
+{
+    _buffer_left = buffer_len;
+    
+    /* write data */
+    do
+    {
+        /* calculate data size to write to cluster */
+        offset_t cluster_offset = fat_cluster_offset(fd->fs, _cluster_num) + _first_cluster_offset;
+        uint16_t write_length = _cluster_size - _first_cluster_offset;
+        if(write_length > _buffer_left)
+            write_length = _buffer_left;
+
+        /* write data which fits into the current cluster */
+        if(!fd->fs->partition->device_write(cluster_offset, buffer, write_length))
+            break;
+
+        /* calculate new file position */
+        buffer += write_length;
+        _buffer_left -= write_length;
+        fd->pos += write_length;
+
+        if(_first_cluster_offset + write_length >= _cluster_size)
+        {
+            /* we are on a cluster boundary, so get the next cluster */
+            cluster_t cluster_num_next = fat_get_next_cluster(fd->fs, _cluster_num);
+            if(!cluster_num_next && _buffer_left > 0)
+                /* we reached the last cluster, append a new one */
+                cluster_num_next = fat_append_clusters(fd->fs, _cluster_num, 1);
+            if(!cluster_num_next)
+            {
+                fd->pos_cluster = 0;
+                break;
+            }
+
+            _cluster_num = cluster_num_next;
+            _first_cluster_offset = 0;
+        }
+
+        fd->pos_cluster = _cluster_num;
+
+    } while(_buffer_left > 0); /* check if we are done */
+    
+    return buffer_len - _buffer_left;
+}
+
+intptr_t fat_write_file_epilogue(struct fat_file_struct* fd)
+{
+    /* update directory entry */
+    if(fd->pos > fd->dir_entry.file_size)
+    {
+        uint32_t size_old = fd->dir_entry.file_size;
+
+        /* update file size */
+        fd->dir_entry.file_size = fd->pos;
+        /* write directory entry */
+        if(!fat_write_dir_entry(fd->fs, &fd->dir_entry))
+        {
+            /* We do not return an error here since we actually wrote
+             * some data to disk. So we calculate the amount of data
+             * we wrote to disk and which lies within the old file size.
+             */
+            _buffer_left = fd->pos - size_old;
+            fd->pos = size_old;
+        }
+    }
+
+    //return buffer_len - buffer_left;
+    return 0;
 }
 #endif
 

@@ -120,6 +120,10 @@ uint8_t fat_get_dir_entry_of_path(struct fat_fs_struct* fs, const char* path, st
 offset_t fat_get_fs_size(const struct fat_fs_struct* fs);
 offset_t fat_get_fs_free(const struct fat_fs_struct* fs);
 
+intptr_t fat_write_file_prologue(struct fat_file_struct* fd);
+intptr_t fat_write_file_write(struct fat_file_struct* fd, const uint8_t* buffer, uintptr_t buffer_len);
+intptr_t fat_write_file_epilogue(struct fat_file_struct* fd);
+
 /**
  * @}
  */

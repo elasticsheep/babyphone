@@ -75,6 +75,12 @@ void adc_init(void)
   adc.read_ptr = NULL;
 }
 
+void adc_shutdown(void)
+{
+  /* Disable the ADC */
+  ADCSRA &= _BV(ADEN);
+}
+
 void adc_start(uint8_t* buffer0, uint8_t* buffer1, uint16_t size)
 {
   /* Store the buffer params */
@@ -134,7 +140,8 @@ void adc_start(uint8_t* buffer0, uint8_t* buffer1, uint16_t size)
     case 8000:
     default:
       TCCR0B = _BV(CS01); /* Fclk / 8 */
-      OCR0A = 125 - 1; /* 8000 Hz */
+      //OCR0A = 125 - 1; /* 8000 Hz */
+      OCR0A = 255 - 1; /* 8000 Hz */
       break;
   }
 #else
@@ -149,16 +156,6 @@ void adc_start(uint8_t* buffer0, uint8_t* buffer1, uint16_t size)
   
   /* Enable interrupts */
   sei();
-}
-
-void adc_pause(void)
-{
-  TIMSK0 &= ~_BV(OCIE0A);
-}
-
-void adc_resume(void)
-{
-  TIMSK0 |= _BV(OCIE0A);
 }
 
 void adc_stop(void)
@@ -189,12 +186,18 @@ void adc_timer_handler(void)
   /* Check the buffer end */
   if (adc.read_ptr >= adc.end_ptr)
   {
-    /* Notify the client */
-    buffer_full_flag = adc.current_buffer + (1 << 4);
+    /* Check for buffer overflow */
+    if (buffer_full_flag != 0)
+    {
+      printf("O");
+      adc_stop();
 
-    /* Raise a buffer interrupt */
-    TIMSK0 |= _BV(OCIE0B);
-  
+      return;
+    }
+    
+    /* Store the current buffer */
+    buffer_full_flag = 0x80 + adc.current_buffer;
+
     /* Switch the current buffer */
     adc.current_buffer ^= 1;
     if (adc.current_buffer)
@@ -207,6 +210,9 @@ void adc_timer_handler(void)
       adc.read_ptr = adc_buffer_pool[0].start;
       adc.end_ptr = adc_buffer_pool[0].end;
     }
+
+    /* Raise a buffer event interrupt */
+    TIMSK0 |= _BV(OCIE0B);
   }
 }
 

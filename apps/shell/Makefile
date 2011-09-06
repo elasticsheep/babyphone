@@ -116,6 +116,7 @@ AUDIO_SRC = \
       $(AUDIO_PATH)/dac.c         \
       $(AUDIO_PATH)/interrupts.c  \
       $(AUDIO_PATH)/player.c      \
+      $(AUDIO_PATH)/recorder.c    \
       $(AUDIO_PATH)/wavparser.c
 
 #------------------------------------------------------------------------------
