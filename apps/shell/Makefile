@@ -111,8 +111,11 @@ SD_READER_SRC = \
 # Audio code
 AUDIO_PATH = audio
 AUDIO_SRC = \
-      $(AUDIO_PATH)/dac.c       \
-      $(AUDIO_PATH)/player.c    \
+      $(AUDIO_PATH)/adc.c         \
+      $(AUDIO_PATH)/buffer.c      \
+      $(AUDIO_PATH)/dac.c         \
+      $(AUDIO_PATH)/interrupts.c  \
+      $(AUDIO_PATH)/player.c      \
       $(AUDIO_PATH)/wavparser.c
 
 #------------------------------------------------------------------------------

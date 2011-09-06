@@ -34,14 +34,13 @@
 
 #include "player.h"
 #include "wavparser.h"
+#include "buffer.h"
 #include "dac.h"
 #include "delay.h"
 
 /*****************************************************************************
 * Constants
 ******************************************************************************/
-#define PCM_BUFFER_SIZE (512)
-#define DATA_BUFFER_SIZE
 
 /*****************************************************************************
 * Definitions
@@ -57,8 +56,12 @@ typedef struct {
 * Globals
 ******************************************************************************/
 t_player_context player;
-uint8_t pcm_buffer[2 * PCM_BUFFER_SIZE];
 uint8_t scratch[64];
+
+/*****************************************************************************
+* Local prototypes
+******************************************************************************/
+void buffer_refill_handler(void);
 
 /*****************************************************************************
 * Functions
@@ -177,6 +180,9 @@ void player_start(struct fat_file_struct* fd, t_notify_eof notify_eof)
     return; 
   }
 
+  /* Set the buffer event handler */
+  set_buffer_event_handler(&buffer_refill_handler);
+
   /* Start the DAC */
   dac_start(pcm_buffer, pcm_buffer + PCM_BUFFER_SIZE, PCM_BUFFER_SIZE);
 }
@@ -184,6 +190,9 @@ void player_start(struct fat_file_struct* fd, t_notify_eof notify_eof)
 void player_stop(void)
 {
   dac_stop();
+  
+  /* Reset the buffer event handler */
+  set_buffer_event_handler(NULL);
   
   /* Reset the context */
   player.fd = NULL;
@@ -199,17 +208,11 @@ void player_resume(void)
   dac_resume();
 }
 
-/* Buffer refill interrupt */
-ISR(TIMER0_COMPB_vect)
+/* Buffer refill handler */
+void buffer_refill_handler(void)
 {
   uint16_t size;
   uint8_t* p;
-
-  /* Disable the interrupt */
-  TIMSK0 &= ~_BV(OCIE0B);
-  
-  /* Re-enable the interrupts to allow the execution of TIMER0_COMPA_vect */
-  sei();
   
   if (empty_buffer_flag)
   {

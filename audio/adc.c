@@ -1,5 +1,5 @@
 /*
-  Copyright 2010  Mathieu SONET (contact [at] elasticsheep [dot] com)
+  Copyright 2011  Mathieu SONET (contact [at] elasticsheep [dot] com)
 
   Permission to use, copy, modify, and distribute this software
   and its documentation for any purpose and without fee is hereby
@@ -29,95 +29,73 @@
 #include <avr/io.h>
 #include <avr/pgmspace.h>
 
-#include "dac.h"
+#include "adc.h"
 #include "interrupts.h"
 
 /*****************************************************************************
 * Definitions
 ******************************************************************************/
-typedef struct dac_packet {
+typedef struct {
   uint8_t *start;
   uint8_t *end;
-} t_dac_buffer;
+} t_adc_buffer;
 
 static struct {
   uint16_t rate;
-  uint8_t  channels;
   uint8_t  current_buffer;
   uint8_t* read_ptr;
   uint8_t* end_ptr;
-} dac;
+} adc;
 
 /*****************************************************************************
 * Globals
 ******************************************************************************/
-t_dac_buffer dac_buffer_pool[2];
+t_adc_buffer adc_buffer_pool[2];
 
-volatile uint8_t empty_buffer_flag;
-
-
-/*****************************************************************************
-* Local prototypes
-******************************************************************************/
-void dac_timer_handler(void);
+volatile uint8_t buffer_full_flag;
 
 /*****************************************************************************
 * Functions
 ******************************************************************************/
 
-void dac_init(uint16_t rate, uint8_t channels)
+void adc_init(void)
 {
-  dac.rate = rate;
-  dac.channels = channels;
+  adc.rate = 8000;
   
-  /* Init the internal PLL */
-  PLLFRQ = _BV(PDIV2);
-  PLLCSR = _BV(PLLE);
-  while(!(PLLCSR & _BV(PLOCK)));
-  PLLFRQ |= _BV(PLLTM0); /* PCK 48MHz */
-  
-  /* Init a fast PWM on Timer4 */
-  TCCR4A = _BV(COM4A0) | _BV(PWM4A); /* Clear OC4A on Compare Match */
-  TCCR4B = _BV(CS40); /* No prescaling => f = PCK/256 = 187500Hz */
-  OCR4A = 0;
-  
-  /* Enable the OC4A output */
-  DDRC |= _BV(PORTC7);
-  
-  /* Enable a second PWM channel */
-  TCCR4A |= _BV(COM4B1) | _BV(PWM4B);
-  OCR4B = 0;
-  
-  /* Enable the OC4B output */
-  DDRB |= _BV(PORTB6);
+  /* Initialize the ADC on ADC0 */
+  ADCSRA = _BV(ADEN) | _BV(ADPS2) | _BV(ADPS1) | _BV(ADPS0); /* Enable the ADC, prescaler 128 */
+  ADMUX |= _BV(REFS0) | _BV(ADLAR); /* AVCC ref with cap on AREF, left justify, mux on ADC0 */
+
+  DDRF  &= ~_BV(PF0); /* Setup ADC0 as an input */
+  DIDR0 |=  _BV(ADC0D); /* Disable the digital input buffer on PF0*/
   
   /* Init the buffer pool */
-  memset(dac_buffer_pool, 0x00, sizeof(dac_buffer_pool));
-  dac.current_buffer = 0;
-  dac.read_ptr = NULL;
+  memset(adc_buffer_pool, 0x00, sizeof(adc_buffer_pool));
+  adc.current_buffer = 0;
+  adc.read_ptr = NULL;
 }
 
-void dac_start(uint8_t* buffer0, uint8_t* buffer1, uint16_t size)
+void adc_start(uint8_t* buffer0, uint8_t* buffer1, uint16_t size)
 {
   /* Store the buffer params */
-  dac_buffer_pool[0].start = buffer0;
-  dac_buffer_pool[0].end = buffer0 + size;
-  dac_buffer_pool[1].start = buffer1;
-  dac_buffer_pool[1].end = buffer1 + size;
+  adc_buffer_pool[0].start = buffer0;
+  adc_buffer_pool[0].end = buffer0 + size;
+  adc_buffer_pool[1].start = buffer1;
+  adc_buffer_pool[1].end = buffer1 + size;
   
   /* Init the read pointer */
-  dac.current_buffer = 0;
-  dac.read_ptr = dac_buffer_pool[0].start;
-  dac.end_ptr = dac_buffer_pool[0].end;
+  adc.current_buffer = 0;
+  adc.read_ptr = adc_buffer_pool[0].start;
+  adc.end_ptr = adc_buffer_pool[0].end;
   
-  empty_buffer_flag = 0;
+  buffer_full_flag = 0;
   
   /* Setup a periodic interrupt to update the sample value */
-  set_sample_timer_handler(&dac_timer_handler);
-  
+  set_sample_timer_handler(&adc_timer_handler);
+    
   TCCR0A = _BV(WGM01); /* CTC mode */
 #if (F_CPU == 16000000)
-  switch(dac.rate)
+  switch(adc.rate)
   {
     case 44100:
       TCCR0B = _BV(CS01); /* Fclk / 8 */
@@ -141,7 +119,7 @@ void dac_start(uint8_t* buffer0, uint8_t* buffer1, uint16_t size)
       break;
   }
 #elif (F_CPU == 8000000)
-  switch(dac.rate)
+  switch(adc.rate)
   {
     case 44100:
       TCCR0B = _BV(CS00); /* Fclk */
@@ -163,7 +141,7 @@ void dac_start(uint8_t* buffer0, uint8_t* buffer1, uint16_t size)
 #error F_CPU not supported
 #endif
   
-  /* Setup the buffer empty interrupt */
+  /* Setup the buffer full interrupt */
   OCR0B = 1;
   
   /* Enable the sample timer interrupt */
@@ -173,17 +151,17 @@ void dac_start(uint8_t* buffer0, uint8_t* buffer1, uint16_t size)
   sei();
 }
 
-void dac_pause(void)
+void adc_pause(void)
 {
   TIMSK0 &= ~_BV(OCIE0A);
 }
 
-void dac_resume(void)
+void adc_resume(void)
 {
   TIMSK0 |= _BV(OCIE0A);
 }
 
-void dac_stop(void)
+void adc_stop(void)
 {
   /* Stop the sample timer interrupt */
   TCCR0A = TCCR0B = OCR0A = TIMSK0 = 0;
@@ -191,39 +169,44 @@ void dac_stop(void)
   set_sample_timer_handler(NULL);
 }
 
-void dac_timer_handler(void)
+void adc_timer_handler(void)
 {
-  uint8_t l_sample = *dac.read_ptr++;
-  OCR4A = l_sample;
-  if (dac.channels == CHANNELS_STEREO)
-  {
-    OCR4B = *dac.read_ptr++;
-  }
-  else
-  {
-    OCR4B = l_sample;
-  }
+  uint8_t sample = 0;
+  
+  /* Start a conversion */
+  ADCSRA |= _BV(ADSC);
+
+  /* Wait for the end of the conversion */
+  while (ADCSRA & _BV(ADSC));
+
+  /* Clear the interrupt flag */
+  ADCSRA |= _BV(ADIF); 
+
+  /* Store the sampled value in a buffer */
+  *adc.read_ptr = ADCL;
+  adc.read_ptr++;
 
   /* Check the buffer end */
-  if (dac.read_ptr >= dac.end_ptr)
+  if (adc.read_ptr >= adc.end_ptr)
   {
     /* Notify the client */
-    empty_buffer_flag = dac.current_buffer + (1 << 4);
+    buffer_full_flag = adc.current_buffer + (1 << 4);
 
-    /* Raise a buffer empty interrupt */
+    /* Raise a buffer interrupt */
     TIMSK0 |= _BV(OCIE0B);
   
     /* Switch the current buffer */
-    dac.current_buffer ^= 1;
-    if (dac.current_buffer)
+    adc.current_buffer ^= 1;
+    if (adc.current_buffer)
     {
-      dac.read_ptr = dac_buffer_pool[1].start;
-      dac.end_ptr = dac_buffer_pool[1].end;
+      adc.read_ptr = adc_buffer_pool[1].start;
+      adc.end_ptr = adc_buffer_pool[1].end;
     }
     else
     {
-      dac.read_ptr = dac_buffer_pool[0].start;
-      dac.end_ptr = dac_buffer_pool[0].end;
+      adc.read_ptr = adc_buffer_pool[0].start;
+      adc.end_ptr = adc_buffer_pool[0].end;
     }
   }
 }
+

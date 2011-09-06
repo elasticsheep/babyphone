@@ -20,7 +20,10 @@
 #include <stdio.h>
 #include "player.h"
 
-#include <LUFA/Drivers/Peripheral/SerialStream.h>
+#include "adc.h"
+#include "buffer.h"
+
+#include "LUFA/Drivers/Peripheral/SerialStream.h"
 
 #define DEBUG 1
 
@@ -230,6 +233,11 @@ void shell_player_eof(void)
   printf_P(PSTR("End of file\r\n"));
 }
 
+void buffer_event(void)
+{
+  printf("B");
+}
+
 void play_file(struct fat_fs_struct* fs, struct fat_dir_struct* dd, const char* name)
 {
   if (IsPlaying)
@@ -335,8 +343,10 @@ int application_main()
             continue;
         }
         
+#if 0
         /* print some card information as a boot message */
         print_disk_info(fs);
+#endif
 
         /* provide a simple shell */
         char buffer[24];
@@ -567,6 +577,13 @@ int application_main()
                     continue;
                 
                 play_file(fs, dd, command);
+            }
+            else if(strncmp_P(command, PSTR("adc"), 3) == 0)
+            {
+                set_buffer_event_handler(&buffer_event);
+              
+                adc_init();
+                adc_start(&pcm_buffer[0], &pcm_buffer[PCM_BUFFER_SIZE], PCM_BUFFER_SIZE);
             }
             else
             {
