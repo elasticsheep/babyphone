@@ -26,4 +26,7 @@
 void recorder_start(struct fat_file_struct* fd);
 void recorder_stop(void);
 
+void raw_recorder_start(void);
+void raw_recorder_stop(void);
+
 #endif /* RECORDER_H */

@@ -180,7 +180,7 @@ void adc_timer_handler(void)
   ADCSRA |= _BV(ADIF); 
 
   /* Store the sampled value in a buffer */
-  *adc.read_ptr = ADCL;
+  *adc.read_ptr = ADCH;
   adc.read_ptr++;
 
   /* Check the buffer end */

@@ -194,6 +194,22 @@ void record_file(struct fat_fs_struct* fs, struct fat_dir_struct* dd, const char
   fat_close_file(recorder_fd);
 }
 
+void raw_record_file(void)
+{
+  printf_P(PSTR("Start raw record...\r\n"));
+  
+  /* Start the recording */
+  raw_recorder_start();
+  
+  /* Record during 5 seconds */
+  delay_ms(200);
+  
+    printf_P(PSTR("Stop raw record...\r\n"));
+  
+  /* Stop the recording */
+  raw_recorder_stop();
+}
+
 int application_main()
 {
     /* we will just use ordinary idle mode */
@@ -508,6 +524,30 @@ int application_main()
                 
                 play_file(fs, dd, command);
             }
+            else if(strncmp_P(command, PSTR("rawadc"), 3) == 0)
+            {
+                /* Initialize the ADC on ADC0 */
+                ADCSRA = _BV(ADEN) | _BV(ADPS2) | _BV(ADPS1) | _BV(ADPS0); /* Enable the ADC, prescaler 128 */
+                ADMUX |= _BV(REFS0) | _BV(ADLAR); /* AVCC ref with cap on AREF, left justify, mux on ADC0 */
+
+                DDRF  &= ~_BV(PF0); /* Setup ADC0 as an input */
+                DIDR0 |=  _BV(ADC0D); /* Disable the digital input buffer on PF0*/
+                
+                while(1)
+                {
+                    /* Start a conversion */
+                    ADCSRA |= _BV(ADSC);
+
+                    /* Wait for the end of the conversion */
+                    while (ADCSRA & _BV(ADSC));
+
+                    /* Clear the interrupt flag */
+                    ADCSRA |= _BV(ADIF); 
+
+                    /* Print the sampled value */
+                    printf_P(PSTR("%i\r\n"), ADCH);
+                }
+            }
             else if(strncmp_P(command, PSTR("adc"), 3) == 0)
             {
                 set_buffer_event_handler(&buffer_event);
@@ -515,13 +555,17 @@ int application_main()
                 adc_init();
                 adc_start(&pcm_buffer[0], &pcm_buffer[PCM_BUFFER_SIZE], PCM_BUFFER_SIZE);
             }
-            else if(strncmp_P(command, PSTR("record "), 7) == 0)
+            else if(strncmp_P(command, PSTR("rec "), 4) == 0)
             {
-                command += 7;
+                command += 4;
                 if(command[0] == '\0')
                     continue;
               
                 record_file(fs, dd, command);
+            }
+            else if(strncmp_P(command, PSTR("rrec"), 4) == 0)
+            {
+                raw_record_file();
             }
             else if(strncmp_P(command, PSTR("fill1 "), 6) == 0)
             {

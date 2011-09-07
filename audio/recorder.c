@@ -29,8 +29,8 @@
 #include <avr/io.h>
 #include <avr/pgmspace.h>
 
-/* sd-reader API */
 #include "fat.h"
+#include "sd_raw.h"
 
 #include "recorder.h"
 #include "buffer.h"
@@ -46,6 +46,7 @@
 ******************************************************************************/
 typedef struct {
   struct fat_file_struct* fd;
+  uint32_t sector;
 } t_recorder_context;
 
 /*****************************************************************************
@@ -57,6 +58,7 @@ t_recorder_context recorder;
 * Local prototypes
 ******************************************************************************/
 void buffer_emptying_handler(void);
+void raw_buffer_emptying_handler(void);
 
 /*****************************************************************************
 * Functions
@@ -118,5 +120,55 @@ void buffer_emptying_handler(void)
       
       printf("\r\n");
     }
+  }
+}
+
+void raw_recorder_start(void)
+{
+  /* Init the recorder context */
+  recorder.sector = 0;
+  
+  /* Init the ADC */
+  adc_init();
+
+  /* Set the buffer event handler */
+  set_buffer_event_handler(&raw_buffer_emptying_handler);
+
+  /* Start the ADC */
+  adc_start(pcm_buffer, pcm_buffer + PCM_BUFFER_SIZE, PCM_BUFFER_SIZE);
+}
+
+void raw_recorder_stop(void)
+{
+  /* Stop and shutdown the ADC */
+  adc_stop();
+  adc_shutdown();
+  
+  /* Reset the buffer event handler */
+  set_buffer_event_handler(NULL);
+  
+  /* Reset the context */
+  recorder.sector = 0;
+}
+
+/* Buffer emptying handler */
+void raw_buffer_emptying_handler(void)
+{
+  uint16_t size;
+  uint8_t* p;
+  
+  if (buffer_full_flag)
+  {
+      printf("F");
+      
+      /* Write data in raw sectors */
+      p = (uint8_t*)pcm_buffer + (buffer_full_flag & 0x1) * PCM_BUFFER_SIZE;
+      sd_raw_write(recorder.sector << 9, p, PCM_BUFFER_SIZE);
+      recorder.sector++;
+      
+      /* Reset the flag */
+      buffer_full_flag = 0;
+      
+      printf("\r\n");
   }
 }
