@@ -41,10 +41,11 @@ typedef struct {
 } t_adc_buffer;
 
 static struct {
-  uint16_t rate;
-  uint8_t  current_buffer;
   uint8_t* read_ptr;
   uint8_t* end_ptr;
+  uint8_t  current_buffer;
+  uint8_t  threshold;
+  uint8_t  triggered;
 } adc;
 
 /*****************************************************************************
@@ -60,7 +61,11 @@ volatile uint8_t buffer_full_flag;
 
 void adc_init(void)
 {
-  adc.rate = 8000;
+  adc.threshold = 64;
+  adc.triggered = 0;
+  
+  if (adc.threshold == 0)
+    adc.triggered = 1;
   
   /* Initialize the ADC on ADC0 */
   ADCSRA = _BV(ADEN) | _BV(ADPS2) | _BV(ADPS1) | _BV(ADPS0); /* Enable the ADC, prescaler 128 */
@@ -100,49 +105,13 @@ void adc_start(uint8_t* buffer0, uint8_t* buffer1, uint16_t size)
   set_sample_timer_handler(&adc_timer_handler);
     
   TCCR0A = _BV(WGM01); /* CTC mode */
+  
 #if (F_CPU == 16000000)
-  switch(adc.rate)
-  {
-    case 44100:
-      TCCR0B = _BV(CS01); /* Fclk / 8 */
-      OCR0A = 45 - 1; /* 44444 Hz */
-      break;
-    
-    case 22050:
-      TCCR0B = _BV(CS01); /* Fclk / 8 */
-      OCR0A = 91 - 1; /* 21978 Hz */
-      break;
-    
-    case 16000:
-      TCCR0B = _BV(CS01); /* Fclk / 8 */
-      OCR0A = 125 - 1; /* 16000 Hz */
-      break;
-      
-    case 8000:
-    default:
-      TCCR0B = _BV(CS01); /* Fclk / 8 */
-      OCR0A = 250 - 1; /* 8000 Hz */
-      break;
-  }
+  TCCR0B = _BV(CS01); /* Fclk / 8 */
+  OCR0A = 250 - 1; /* 8000 Hz */
 #elif (F_CPU == 8000000)
-  switch(adc.rate)
-  {
-    case 44100:
-      TCCR0B = _BV(CS00); /* Fclk */
-      OCR0A = 181 - 1; /* 44198 Hz */
-      break;
-    
-    case 16000:
-      TCCR0B = _BV(CS01); /* Fclk / 8 */
-      OCR0A = 62 - 1; /* 15873 Hz */
-      break;
-      
-    case 8000:
-    default:
-      TCCR0B = _BV(CS01); /* Fclk / 8 */
-      OCR0A = 125 - 1; /* 8000 Hz */
-      break;
-  }
+  TCCR0B = _BV(CS01); /* Fclk / 8 */
+  OCR0A = 125 - 1; /* 8000 Hz */
 #else
 #error F_CPU not supported
 #endif
@@ -178,40 +147,54 @@ void adc_timer_handler(void)
   /* Clear the interrupt flag */
   ADCSRA |= _BV(ADIF); 
 
-  /* Store the sampled value in a buffer */
-  *adc.read_ptr = ADCH;
-  adc.read_ptr++;
+  /* Read the sampled value */
+  sample = ADCH;
 
-  /* Check the buffer end */
-  if (adc.read_ptr >= adc.end_ptr)
+  if (adc.triggered)
   {
-    /* Check for buffer overflow */
-    if (buffer_full_flag != 0)
-    {
-      printf("O");
-      adc_stop();
+    /* Store the sampled value in a buffer */
+    *adc.read_ptr = sample;
+    adc.read_ptr++;
 
-      return;
-    }
-    
-    /* Store the current buffer */
-    buffer_full_flag = 0x80 + adc.current_buffer;
-
-    /* Switch the current buffer */
-    adc.current_buffer ^= 1;
-    if (adc.current_buffer)
+    /* Check the buffer end */
+    if (adc.read_ptr >= adc.end_ptr)
     {
-      adc.read_ptr = adc_buffer_pool[1].start;
-      adc.end_ptr = adc_buffer_pool[1].end;
-    }
-    else
-    {
-      adc.read_ptr = adc_buffer_pool[0].start;
-      adc.end_ptr = adc_buffer_pool[0].end;
-    }
+      /* Check for buffer overflow */
+      if (buffer_full_flag != 0)
+      {
+        printf("O");
+        adc_stop();
 
-    /* Enable the buffer event interrupt */
-    TIMSK0 |= _BV(OCIE0B);
+        return;
+      }
+
+      /* Store the current buffer */
+      buffer_full_flag = 0x80 + adc.current_buffer;
+
+      /* Switch the current buffer */
+      adc.current_buffer ^= 1;
+      if (adc.current_buffer)
+      {
+        adc.read_ptr = adc_buffer_pool[1].start;
+        adc.end_ptr = adc_buffer_pool[1].end;
+      }
+      else
+      {
+        adc.read_ptr = adc_buffer_pool[0].start;
+        adc.end_ptr = adc_buffer_pool[0].end;
+      }
+
+      /* Enable the buffer event interrupt */
+      TIMSK0 |= _BV(OCIE0B);
+    }
+  }
+  else
+  {
+    if (  (sample < (128 - adc.threshold))
+       || (sample > (128 + adc.threshold)) )
+    {
+      adc.triggered = 1;
+    }
   }
 }
 
