@@ -61,11 +61,11 @@ extern void buffer_refill_handler(void);
 /* Buffer event interrupt */
 ISR(TIMER0_COMPB_vect)
 {
-  /* Disable the interrupt */
+  /* Enable the buffer event interrupt */
   TIMSK0 &= ~_BV(OCIE0B);
   
   /* Re-enable the interrupts to allow the execution of TIMER0_COMPA_vect */
-  sei();
+  //sei(); => cause glitch in the recording on buffer boundaries... (why ???)
   
   /* Call the handler */
   if (buffer_event_handler)

@@ -210,7 +210,7 @@ void adc_timer_handler(void)
       adc.end_ptr = adc_buffer_pool[0].end;
     }
 
-    /* Raise a buffer event interrupt */
+    /* Enable the buffer event interrupt */
     TIMSK0 |= _BV(OCIE0B);
   }
 }
