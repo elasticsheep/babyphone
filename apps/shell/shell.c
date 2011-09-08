@@ -36,178 +36,84 @@ static struct fat_file_struct* open_file_in_dir(struct fat_fs_struct* fs, struct
 static uint8_t print_disk_info(const struct fat_fs_struct* fs);
 
 static uint8_t IsPlaying = 0;
-static struct fat_file_struct* player_fd = NULL;
-
 static uint8_t IsRecording = 0;
-static struct fat_file_struct* recorder_fd = NULL;
-
-void shell_player_eof(void)
-{
-  player_stop();
-  
-  if (player_fd)
-    fat_close_file(player_fd);
-  
-  IsPlaying = 0;
-  
-  printf_P(PSTR("End of file\r\n"));
-}
 
 void buffer_event(void)
 {
   printf("B");
 }
 
-void play_file(struct fat_fs_struct* fs, struct fat_dir_struct* dd, const char* name)
+void end_of_playback(void)
 {
-  if (IsPlaying)
-  {
-    player_stop();
-    
-    if (player_fd)
-      fat_close_file(player_fd);
-    
-    IsPlaying = 0;
-  }
-    
-  /* search file in current directory and open it */
-  player_fd = open_file_in_dir(fs, dd, name);
-  if(!player_fd)
-  {
-      printf_P(PSTR("error opening %s\r\n"), name);
-      return;
-  }
+  printf_P(PSTR("End of playback\r\n"));
+  
+  player_stop();
+  IsPlaying = 0;
+}
 
+void play(uint32_t start_sector, uint16_t nb_sectors)
+{
+  printf_P(PSTR("Start playing...\r\n"));
+
+  if (IsPlaying)
+    player_stop();
+  
   IsPlaying = 1;
 
   /* Start the playback */
-  player_start(player_fd, &shell_player_eof);
+  player_start(start_sector, nb_sectors, &end_of_playback);
 }
 
-void fill1_file(struct fat_fs_struct* fs, struct fat_dir_struct* dd, const char* name)
+void end_of_record(void)
 {
-  uint32_t i, j;
+  printf_P(PSTR("End of record\r\n"));
   
-  /* Create an empty file */
-  struct fat_dir_entry_struct file_entry;
-  
-  printf_P(PSTR("Create file %s...\r\n"), name);
-  if(!fat_create_file(dd, name, &file_entry))
-  {
-      //printf_P(PSTR("error creating %s\r\n "), name);
-  }
-  
-  /* search file in current directory and open it */
-  printf_P(PSTR("Open file..."));
-  recorder_fd = open_file_in_dir(fs, dd, name);
-  if(!recorder_fd)
-  {
-      printf_P(PSTR("error opening %s\r\n"), name);
-      return;
-  }
-
-  for(j = 1; j < 2; j++)
-  {
-    for(i = 0; i < 512; i++)
-      pcm_buffer[i] = j;
-      
-    printf_P(PSTR("Write to file..."));
-    fat_write_file(recorder_fd, pcm_buffer, 512);
-  }
-
-  /* Close the file */
-  printf_P(PSTR("Close file..."));
-  fat_close_file(recorder_fd);
-}
-
-void fill2_file(struct fat_fs_struct* fs, struct fat_dir_struct* dd, const char* name)
-{
-  uint32_t i, j;
-  
-  /* Create an empty file */
-  struct fat_dir_entry_struct file_entry;
-  
-  printf_P(PSTR("Create file %s...\r\n"), name);
-  if(!fat_create_file(dd, name, &file_entry))
-  {
-      //printf_P(PSTR("error creating %s\r\n "), name);
-  }
-  
-  /* search file in current directory and open it */
-  printf_P(PSTR("Open file..."));
-  recorder_fd = open_file_in_dir(fs, dd, name);
-  if(!recorder_fd)
-  {
-      printf_P(PSTR("error opening %s\r\n"), name);
-      return;
-  }
-
-  fat_write_file_prologue(recorder_fd);
-
-  for(j = 1; j < 2; j++)
-  {
-    for(i = 0; i < 512; i++)
-      pcm_buffer[i] = j << 2;
-      
-    printf_P(PSTR("Write to file..."));
-    fat_write_file_write(recorder_fd, pcm_buffer, 512);
-  }
-  
-  fat_write_file_epilogue(recorder_fd);
-  
-  /* Close the file */
-  printf_P(PSTR("Close file..."));
-  fat_close_file(recorder_fd);
-}
-
-void record_file(struct fat_fs_struct* fs, struct fat_dir_struct* dd, const char* name)
-{
-  /* Create an empty file */
-  struct fat_dir_entry_struct file_entry;
-  
-  printf_P(PSTR("Create file %s...\r\n"), name);
-  if(!fat_create_file(dd, name, &file_entry))
-  {
-      //printf_P(PSTR("error creating %s\r\n "), name);
-  }
-  
-  /* search file in current directory and open it */
-  printf_P(PSTR("Open file..."));
-  recorder_fd = open_file_in_dir(fs, dd, name);
-  if(!recorder_fd)
-  {
-      printf_P(PSTR("error opening %s\r\n"), name);
-      return;
-  }
-
-  /* Start the recording */
-  recorder_start(recorder_fd);
-  
-  /* Record during 5 seconds */
-  delay_ms(1000);
-  
-  /* Stop the recording */
   recorder_stop();
-  
-  /* Close the file */
-  printf_P(PSTR("Close file..."));
-  fat_close_file(recorder_fd);
+  IsRecording = 1;
 }
 
-void raw_record_file(void)
+void record(uint32_t start_sector, uint16_t nb_sectors)
 {
-  printf_P(PSTR("Start raw record...\r\n"));
+  printf_P(PSTR("Start recording...\r\n"));
+  
+  if (IsRecording)
+    recorder_stop();
+  
+  IsRecording = 1;
   
   /* Start the recording */
-  raw_recorder_start();
+  recorder_start(start_sector, nb_sectors, &end_of_record);
+}
+
+void fill(uint32_t start_sector, uint16_t nb_sectors)
+{
+  uint32_t i = 0;
   
-  /* Record during 5 seconds */
-  delay_ms(200);
+  printf_P(PSTR("Start filling...\r\n"));
   
-    printf_P(PSTR("Stop raw record...\r\n"));
+  for(i = 0; i < 512; ++i)
+  {
+    pcm_buffer[i] = 0xCA;
+  }
   
-  /* Stop the recording */
-  raw_recorder_stop();
+  for(i = start_sector; i < (start_sector + nb_sectors); i++)
+  {
+    sd_raw_write(i << 9, pcm_buffer, 512);
+  }
+  
+  printf_P(PSTR("End of filling\r\n"));
+}
+
+void erase(uint32_t start_sector, uint16_t nb_sectors)
+{
+  uint8_t res = 0;
+  
+  printf_P(PSTR("Start erasing...\r\n"));
+  
+  /* Start the recording */
+  res = sd_raw_erase_blocks(start_sector, nb_sectors);
+  
+  printf_P(PSTR("End of erasing (%i)\r\n"), res);
 }
 
 int application_main()
@@ -229,7 +135,9 @@ int application_main()
         }
 
         /* open first partition */
-        struct partition_struct* partition = partition_open(sd_raw_read,
+        struct partition_struct* partition = NULL;
+#if 0
+        partition = partition_open(sd_raw_read,
                                                             sd_raw_read_interval,
 #if SD_RAW_WRITE_SUPPORT
                                                             sd_raw_write,
@@ -265,9 +173,12 @@ int application_main()
                 continue;
             }
         }
+#endif
 
         /* open file system */
-        struct fat_fs_struct* fs = fat_open(partition);
+        struct fat_fs_struct* fs = NULL;
+#if 0
+        fs = fat_open(partition);
         if(!fs)
         {
 #if DEBUG
@@ -279,8 +190,11 @@ int application_main()
         /* open root directory */
         struct fat_dir_entry_struct directory;
         fat_get_dir_entry_of_path(fs, "/", &directory);
+#endif
 
-        struct fat_dir_struct* dd = fat_open_dir(fs, &directory);
+        struct fat_dir_struct* dd = NULL;
+#if 0
+        dd = fat_open_dir(fs, &directory);
         if(!dd)
         {
 #if DEBUG
@@ -288,7 +202,8 @@ int application_main()
 #endif
             continue;
         }
-        
+#endif
+
 #if 0
         /* print some card information as a boot message */
         print_disk_info(fs);
@@ -516,14 +431,6 @@ int application_main()
                     uart_puts_p(PSTR("error syncing disk\n"));
             }
 #endif
-            else if(strncmp_P(command, PSTR("play "), 5) == 0)
-            {
-                command += 5;
-                if(command[0] == '\0')
-                    continue;
-                
-                play_file(fs, dd, command);
-            }
             else if(strncmp_P(command, PSTR("rawadc"), 3) == 0)
             {
                 /* Initialize the ADC on ADC0 */
@@ -555,33 +462,21 @@ int application_main()
                 adc_init();
                 adc_start(&pcm_buffer[0], &pcm_buffer[PCM_BUFFER_SIZE], PCM_BUFFER_SIZE);
             }
-            else if(strncmp_P(command, PSTR("rec "), 4) == 0)
+            else if(strncmp_P(command, PSTR("rec"), 3) == 0)
             {
-                command += 4;
-                if(command[0] == '\0')
-                    continue;
-              
-                record_file(fs, dd, command);
+                record(0, 64);
             }
-            else if(strncmp_P(command, PSTR("rrec"), 4) == 0)
+            else if(strncmp_P(command, PSTR("erase"), 5) == 0)
             {
-                raw_record_file();
+                erase(0, 64);
             }
-            else if(strncmp_P(command, PSTR("fill1 "), 6) == 0)
+            else if(strncmp_P(command, PSTR("fill"), 4) == 0)
             {
-                command += 6;
-                if(command[0] == '\0')
-                    continue;
-              
-                fill1_file(fs, dd, command);
+                fill(0, 128);
             }
-            else if(strncmp_P(command, PSTR("fill2 "), 6) == 0)
+            else if(strncmp_P(command, PSTR("play"), 4) == 0)
             {
-                command += 6;
-                if(command[0] == '\0')
-                    continue;
-              
-                fill2_file(fs, dd, command);
+                play(0, 64);
             }
             else
             {

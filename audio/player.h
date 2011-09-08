@@ -25,9 +25,7 @@
 
 typedef void (*t_notify_eof)(void);
 
-void player_start(struct fat_file_struct* fd, t_notify_eof notify_eof);
+void player_start(uint32_t start_sector, uint16_t nb_sectors, t_notify_eof notify_eof);
 void player_stop(void);
-void player_pause(void);
-void player_resume(void);
 
 #endif /* PLAYER_H */

@@ -160,7 +160,7 @@ static uint8_t sd_raw_card_type;
 
 /* private helper functions */
 static void sd_raw_send_byte(uint8_t b);
-static uint8_t sd_raw_rec_byte();
+static uint8_t sd_raw_rec_byte(void);
 static uint8_t sd_raw_send_command(uint8_t command, uint32_t arg);
 
 /**
@@ -374,7 +374,7 @@ void sd_raw_send_byte(uint8_t b)
  * \returns The byte which should be read.
  * \see sd_raw_send_byte
  */
-uint8_t sd_raw_rec_byte()
+uint8_t sd_raw_rec_byte(void)
 {
     /* send dummy data for receiving some */
     SPDR = 0xff;
@@ -992,3 +992,43 @@ uint8_t sd_raw_get_info(struct sd_raw_info* info)
     return 1;
 }
 
+uint8_t sd_raw_erase_blocks(uint32_t start_block, uint32_t total_blocks)
+{
+    uint32_t start_address = start_block << 9;
+    uint32_t end_address = start_address + (total_blocks << 9) - 1;
+  
+    /* address card */
+    select_card();
+
+    /* tag sector start */
+    if(sd_raw_send_command(CMD_TAG_SECTOR_START, start_address))
+    {
+        unselect_card();
+        return 0;
+    }
+    
+    /* tag sector end */
+    if(sd_raw_send_command(CMD_TAG_SECTOR_END, end_address))
+    {
+        unselect_card();
+        return 0;
+    }
+
+    /* erase selected sectors */
+    if(sd_raw_send_command(CMD_ERASE, 0))
+    {
+        unselect_card();
+        return 0;
+    }
+
+    /* wait while card is busy */
+    while(sd_raw_rec_byte() != 0xff);
+
+    /* deaddress card */
+    unselect_card();
+    
+    /* let card some time to finish */
+    sd_raw_rec_byte();
+    
+    return 1;
+}

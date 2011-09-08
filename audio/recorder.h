@@ -23,10 +23,9 @@
 #ifndef RECORDER_H
 #define RECORDER_H
 
-void recorder_start(struct fat_file_struct* fd);
-void recorder_stop(void);
+typedef void (*t_recorder_notify_eof)(void);
 
-void raw_recorder_start(void);
-void raw_recorder_stop(void);
+void recorder_start(uint32_t start_sector, uint16_t nb_sectors, t_recorder_notify_eof notify_eof);
+void recorder_stop(void);
 
 #endif /* RECORDER_H */

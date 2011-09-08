@@ -140,8 +140,7 @@ void adc_start(uint8_t* buffer0, uint8_t* buffer1, uint16_t size)
     case 8000:
     default:
       TCCR0B = _BV(CS01); /* Fclk / 8 */
-      //OCR0A = 125 - 1; /* 8000 Hz */
-      OCR0A = 255 - 1; /* 8000 Hz */
+      OCR0A = 125 - 1; /* 8000 Hz */
       break;
   }
 #else

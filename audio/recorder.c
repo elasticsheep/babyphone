@@ -33,50 +33,43 @@
 #include "sd_raw.h"
 
 #include "recorder.h"
+#include "interrupts.h"
 #include "buffer.h"
 #include "adc.h"
 #include "delay.h"
 
 /*****************************************************************************
-* Constants
-******************************************************************************/
-
-/*****************************************************************************
-* Definitions
-******************************************************************************/
-typedef struct {
-  struct fat_file_struct* fd;
-  uint32_t sector;
-} t_recorder_context;
-
-/*****************************************************************************
 * Globals
 ******************************************************************************/
-t_recorder_context recorder;
+struct {
+  t_recorder_notify_eof notify_eof;
+  uint32_t current_sector;
+  uint32_t end_sector;
+  uint8_t eof;
+} recorder;
 
 /*****************************************************************************
 * Local prototypes
 ******************************************************************************/
-void buffer_emptying_handler(void);
-void raw_buffer_emptying_handler(void);
+void buffer_full_handler(void);
 
 /*****************************************************************************
 * Functions
 ******************************************************************************/
 
-void recorder_start(struct fat_file_struct* fd)
+void recorder_start(uint32_t start_sector, uint16_t nb_sectors, t_recorder_notify_eof notify_eof)
 {
-  uint16_t size;
-
   /* Init the recorder context */
-  recorder.fd = fd;
-  fat_write_file_prologue(recorder.fd);
-
+  recorder.current_sector = start_sector;
+  recorder.end_sector = start_sector + nb_sectors;
+  recorder.notify_eof = notify_eof;
+  recorder.eof = 0;
+  
   /* Init the ADC */
   adc_init();
 
   /* Set the buffer event handler */
-  set_buffer_event_handler(&buffer_emptying_handler);
+  set_buffer_event_handler(&buffer_full_handler);
 
   /* Start the ADC */
   adc_start(pcm_buffer, pcm_buffer + PCM_BUFFER_SIZE, PCM_BUFFER_SIZE);
@@ -91,84 +84,41 @@ void recorder_stop(void)
   /* Reset the buffer event handler */
   set_buffer_event_handler(NULL);
   
-  /* End the write operation */
-  fat_write_file_epilogue(recorder.fd);
-  
   /* Reset the context */
-  recorder.fd = NULL;
+  recorder.current_sector = 0;
+  recorder.end_sector = 0;
 }
 
-/* Buffer emptying handler */
-void buffer_emptying_handler(void)
+void buffer_full_handler(void)
 {
-  uint16_t size;
   uint8_t* p;
+  uint32_t wr_address = recorder.current_sector << 9;
   
   if (buffer_full_flag)
   {
-    if (recorder.fd)
-    {
-      printf("F");
+      //printf("F");
       
-      /* Write data to the filesystem */
+      /* Write data in raw sector */
       p = (uint8_t*)pcm_buffer + (buffer_full_flag & 0x1) * PCM_BUFFER_SIZE;
-      //size = fat_write_file_write(recorder.fd, p, PCM_BUFFER_SIZE);
-      sd_raw_write(112000, p, PCM_BUFFER_SIZE);
+      sd_raw_write(wr_address, p, PCM_BUFFER_SIZE);
+      recorder.current_sector++;
       
       /* Reset the flag */
       buffer_full_flag = 0;
       
-      printf("\r\n");
-    }
-  }
-}
+      /* Detect end of file */
+      if ((recorder.eof == 0) && (recorder.current_sector >= recorder.end_sector))
+      {
+        recorder.eof = 1;
+        
+        /* Stop the adc */
+        adc_stop();
 
-void raw_recorder_start(void)
-{
-  /* Init the recorder context */
-  recorder.sector = 0;
-  
-  /* Init the ADC */
-  adc_init();
-
-  /* Set the buffer event handler */
-  set_buffer_event_handler(&raw_buffer_emptying_handler);
-
-  /* Start the ADC */
-  adc_start(pcm_buffer, pcm_buffer + PCM_BUFFER_SIZE, PCM_BUFFER_SIZE);
-}
-
-void raw_recorder_stop(void)
-{
-  /* Stop and shutdown the ADC */
-  adc_stop();
-  adc_shutdown();
-  
-  /* Reset the buffer event handler */
-  set_buffer_event_handler(NULL);
-  
-  /* Reset the context */
-  recorder.sector = 0;
-}
-
-/* Buffer emptying handler */
-void raw_buffer_emptying_handler(void)
-{
-  uint16_t size;
-  uint8_t* p;
-  
-  if (buffer_full_flag)
-  {
-      printf("F");
+        /* Notify the client */
+        if (recorder.notify_eof)
+          recorder.notify_eof();
+      }
       
-      /* Write data in raw sectors */
-      p = (uint8_t*)pcm_buffer + (buffer_full_flag & 0x1) * PCM_BUFFER_SIZE;
-      sd_raw_write(recorder.sector << 9, p, PCM_BUFFER_SIZE);
-      recorder.sector++;
-      
-      /* Reset the flag */
-      buffer_full_flag = 0;
-      
-      printf("\r\n");
+      //printf("\r\n");
   }
 }
