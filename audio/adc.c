@@ -61,6 +61,11 @@ volatile uint8_t buffer_full_flag;
 
 void adc_init(void)
 {
+  /* Configure a led output for the triggered signal */
+  DDRD |= _BV(PORTD6);
+  PORTD &= ~_BV(PORTD6);
+  
+  /* Init the context */
   adc.threshold = 64;
   adc.triggered = 0;
   
@@ -84,6 +89,9 @@ void adc_shutdown(void)
 {
   /* Disable the ADC */
   ADCSRA &= _BV(ADEN);
+  
+  /* Disable the led */
+  PORTD &= ~_BV(PORTD6);
 }
 
 void adc_start(uint8_t* buffer0, uint8_t* buffer1, uint16_t size)
@@ -162,7 +170,7 @@ void adc_timer_handler(void)
       /* Check for buffer overflow */
       if (buffer_full_flag != 0)
       {
-        printf("O");
+        //printf("O");
         adc_stop();
 
         return;
@@ -194,6 +202,9 @@ void adc_timer_handler(void)
        || (sample > (128 + adc.threshold)) )
     {
       adc.triggered = 1;
+      
+      /* Enable the led */
+      PORTD |= _BV(PORTD6);
     }
   }
 }
