@@ -33,24 +33,11 @@
 
 #include "LUFA/Drivers/Peripheral/SerialStream.h"
 
+#include "keyboard.h"
+
 /*****************************************************************************
 * Constants
 ******************************************************************************/
-#define NB_ROWS (3)
-#define NB_COLS (3)
-
-char keycode[] =
-{
-  '1', // row 0 col 0
-  '2', // row 0 col 1
-  '3', // row 0 col 2
-  '4', // row 1 col 0
-  '5', // row 1 col 1
-  '6', // row 1 col 2
-  '7', // row 2 col 0
-  '8', // row 2 col 1
-  '9', // row 2 col 2
-};
 
 /*****************************************************************************
 * Definitions
@@ -68,100 +55,28 @@ char keycode[] =
 * Functions
 ******************************************************************************/
 
-void init_cols_rows(void)
-{
-  /* Setup columns: input with pullup */
-  DDRF &= ~_BV(PORTF4); PORTF |= _BV(PORTF4); // Col 0
-  DDRF &= ~_BV(PORTF5); PORTF |= _BV(PORTF5); // Col 1
-  DDRF &= ~_BV(PORTF6); PORTF |= _BV(PORTF6); // Col 2
-  
-  /* Setup rows: output high */
-  DDRF |= _BV(PORTF7); PORTF |= _BV(PORTF7); // Row 0 
-  DDRB |= _BV(PORTB4); PORTB |= _BV(PORTB4); // Row 1
-  DDRD |= _BV(PORTD7); PORTD |= _BV(PORTD7); // Row 2
-}
-
-uint8_t read_col(uint8_t index)
-{
-  switch(index)
-  {
-    case 0:
-      return (PINF & _BV(PORTF4)) > 0;
-    case 1:
-      return (PINF & _BV(PORTF5)) > 0;
-    case 2:
-      return (PINF & _BV(PORTF6)) > 0;
-  }
-  
-  return 1;
-}
-
-void select_row(uint8_t index)
-{
-  switch(index)
-  {
-    case 0:
-      PORTF &= ~_BV(PORTF7);
-      break;
-    case 1:
-      PORTB &= ~_BV(PORTB4);
-      break;
-    case 2:
-      PORTD &= ~_BV(PORTD7);
-      break;
-  }
-}
-
-void deselect_row(uint8_t index)
-{
-  switch(index)
-  {
-    case 0:
-      PORTF |= _BV(PORTF7);
-      break;
-    case 1:
-      PORTB |= _BV(PORTB4);
-      break;
-    case 2:
-      PORTD |= _BV(PORTD7);
-      break;
-  }
-}
-
-char scan_keyboard(void)
-{
-  uint8_t row, col;
-  
-  for(row = 0; row < NB_ROWS; row++)
-  {
-    select_row(row);
-    for(col = 0; col < NB_COLS; col++)
-    {
-      if (read_col(col) == 0)
-      {
-        deselect_row(row);
-        return keycode[row * NB_COLS + col];
-      }
-    }
-    deselect_row(row);
-  }
-}
-
 int application_main(void)
 {
   set_sleep_mode(SLEEP_MODE_IDLE);
 
   SerialStream_Init(38400, false);
 
-  init_cols_rows();
+  keyboard_init();
   
   while(1)
   {
-    char key = scan_keyboard();
-    if (key > 0)
-      printf("%c", key);
+    uint8_t event;
     
     delay_ms(10);
+    keyboard_update(&event);
+    
+    if (event & EVENT_KEY_PRESSED)
+      printf("P %i\r\n", event & KEYCODE_MASK);
+      
+    if (event & EVENT_KEY_RELEASED)
+      printf(" R %i\r\n", event & KEYCODE_MASK);
+      
+    event = 0;
   }
 
   return 0;

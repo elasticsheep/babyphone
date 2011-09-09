@@ -79,7 +79,7 @@ FORMAT = ihex
 
 
 # Target file name (without extension).
-TARGET = matrix
+TARGET = app_matrix
 
 
 # Object files directory
@@ -99,10 +99,11 @@ LUFA_SRC = \
 
 #------------------------------------------------------------------------------
 # Application code
-APP_PATH = apps/$(TARGET)
+APP_PATH = apps/matrix
 SRC = \
-      $(APP_PATH)/matrix.c  \
-      utils/main.c          \
+      $(APP_PATH)/app_matrix.c  \
+      $(APP_PATH)/keyboard.c    \
+      utils/main.c              \
       utils/delay.c
 
 SRC += $(LUFA_SRC)
