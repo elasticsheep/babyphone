@@ -48,9 +48,6 @@ void basic_setup(void)
 #if (F_CPU == 16000000UL)
   /* Set the clock prescaler */
   clock_prescale_set(clock_div_1);
-#elif (F_CPU == 8000000UL)
-  /* Set the clock prescaler */
-  clock_prescale_set(clock_div_2);
 #else
 #error Unsupported F_CPU
 #endif

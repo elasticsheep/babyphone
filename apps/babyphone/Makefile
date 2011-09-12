@@ -79,7 +79,7 @@ FORMAT = ihex
 
 
 # Target file name (without extension).
-TARGET = app_matrix
+TARGET = app_babyphone
 
 
 # Object files directory
@@ -98,15 +98,35 @@ LUFA_SRC = \
       $(LUFA_PATH)/LUFA/Drivers/Peripheral/SerialStream.c
 
 #------------------------------------------------------------------------------
+# sd-reader library
+SD_READER_PATH = vendor/sd-reader_source_20090330-teensy
+SD_READER_OPTS =
+SD_READER_SRC = \
+      $(SD_READER_PATH)/sd_raw.c
+
+#------------------------------------------------------------------------------
+# Audio code
+AUDIO_PATH = audio
+AUDIO_SRC = \
+      $(AUDIO_PATH)/adc.c         \
+      $(AUDIO_PATH)/buffer.c      \
+      $(AUDIO_PATH)/dac.c         \
+      $(AUDIO_PATH)/interrupts.c  \
+      $(AUDIO_PATH)/player.c      \
+      $(AUDIO_PATH)/recorder.c
+
+#------------------------------------------------------------------------------
 # Application code
-APP_PATH = apps/matrix
+APP_PATH = apps/babyphone
 SRC = \
-      $(APP_PATH)/app_matrix.c  \
-      driver/keyboard.c         \
-      utils/main.c              \
+      $(APP_PATH)/app_babyphone.c  \
+      driver/keyboard.c            \
+      utils/main.c                 \
       utils/delay.c
 
+SRC += $(AUDIO_SRC)
 SRC += $(LUFA_SRC)
+SRC += $(SD_READER_SRC)
 
 # List Assembler source files here.
 #     Make them always end in a capital .S.  Files ending in a lowercase .s

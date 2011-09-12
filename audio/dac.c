@@ -21,6 +21,12 @@
 */
 
 /*****************************************************************************
+* Hardware resources used:
+*   Timer0 A & B interrupts
+*   Timer4 Fast PWM on A & B outputs (PC7 & PB6)
+******************************************************************************/
+
+/*****************************************************************************
 * Includes
 ******************************************************************************/
 #include <stdio.h>
@@ -138,25 +144,6 @@ void dac_start(uint8_t* buffer0, uint8_t* buffer1, uint16_t size)
     default:
       TCCR0B = _BV(CS01); /* Fclk / 8 */
       OCR0A = 250 - 1; /* 8000 Hz */
-      break;
-  }
-#elif (F_CPU == 8000000)
-  switch(dac.rate)
-  {
-    case 44100:
-      TCCR0B = _BV(CS00); /* Fclk */
-      OCR0A = 181 - 1; /* 44198 Hz */
-      break;
-    
-    case 16000:
-      TCCR0B = _BV(CS01); /* Fclk / 8 */
-      OCR0A = 62 - 1; /* 15873 Hz */
-      break;
-      
-    case 8000:
-    default:
-      TCCR0B = _BV(CS01); /* Fclk / 8 */
-      OCR0A = 125 - 1; /* 8000 Hz */
       break;
   }
 #else

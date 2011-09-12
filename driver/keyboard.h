@@ -20,10 +20,11 @@
   this software.
 */
 
-#define KEYCODE_MASK        (0x0F)
+#define KEYCODE_MASK        (0x1F)
 
 enum {
-  KEYCODE_1 = 1,
+  KEYCODE_NONE  = 0,
+  KEYCODE_1     = 1,
   KEYCODE_2,
   KEYCODE_3,
   KEYCODE_4,
@@ -32,14 +33,21 @@ enum {
   KEYCODE_7,
   KEYCODE_8,
   KEYCODE_9,
-  KEYCODE_ENR,
-  KEYCODE_MEM,
-  KEYCODE_R,
-  KEYCODE_BIS,
-  KEYCODE_M1,
-  KEYCODE_M2,
-  KEYCODE_M3,
-  KEYCODE_HF,
+  KEYCODE_0     = 10,
+  KEYCODE_STAR  = 11,
+  KEYCODE_SHARP = 12,
+  KEYCODE_ENR   = 13,
+  KEYCODE_MEM   = 14,
+  KEYCODE_R     = 15,
+  KEYCODE_BIS   = 16,
+  KEYCODE_M1    = 17,
+  KEYCODE_M2    = 18,
+  KEYCODE_M3    = 19,
+  
+  /* Non-matrix keys */
+  KEYCODE_HF    = 21,
+  KEYCODE_SW0   = 22,
+  KEYCODE_SW1   = 23,
 };
 
 #define EVENT_MASK          (0xC0)
@@ -47,5 +55,5 @@ enum {
 #define EVENT_KEY_PRESSED   (1 << 6)
 #define EVENT_KEY_RELEASED  (2 << 6)
 
-void keyboard_init(void);
+void keyboard_init(uint8_t debouncing_threshold);
 void keyboard_update(uint8_t* event);
