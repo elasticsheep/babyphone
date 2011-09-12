@@ -251,7 +251,6 @@ uint8_t raw2keycode(uint8_t rawcode)
   uint8_t row = (rawcode >> 4);
   uint8_t col = (rawcode & 0x0F);
   
-  printf("%u\r\n", row * NB_MATRIX_COLS + col);
   return keycode[row * NB_MATRIX_COLS + col];
 }
 
@@ -296,7 +295,7 @@ void keyboard_update(uint8_t* event)
         if (kbd.counter >= kbd.threshold)
         {
           /* Key pressed event */
-          printf("%iP %02x\r\n", kbd.state, kbd.rawcode);
+          //printf("%iP %02x\r\n", kbd.state, kbd.rawcode);
 
           kbd.state = STATE_PRESSED;
           *event = EVENT_KEY_PRESSED | raw2keycode(kbd.rawcode);

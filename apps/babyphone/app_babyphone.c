@@ -43,9 +43,14 @@
 ******************************************************************************/
 enum {
   STATE_IDLE,
-  STATE_IS_PLAYING,
-  STATE_IS_RECORDING
+  STATE_RECORD_SELECT_SLOT,
+  STATE_PLAYING,
+  STATE_RECORDING,
+  
+  STATE_SAME = 0xFF,
 };
+
+#define NB_BANKS (3)
 
 /*****************************************************************************
 * Definitions
@@ -54,8 +59,12 @@ enum {
 /*****************************************************************************
 * Globals
 ******************************************************************************/
-struct {
+volatile struct {
   uint8_t state;
+  uint8_t bank;
+  
+  uint8_t key_event_flag;
+  uint8_t key_event;
 } app;
 
 /*****************************************************************************
@@ -70,56 +79,14 @@ void stop_all(void)
 {
   switch(app.state)
   {
-    case STATE_IS_PLAYING:
+    case STATE_PLAYING:
       player_stop();
       break;
       
-    case STATE_IS_RECORDING:
+    case STATE_RECORDING:
       recorder_stop();
       break;
   }
-}
-
-void end_of_playback(void)
-{
-  printf_P(PSTR("End of playback\r\n"));
-  
-  player_stop();
-  app.state = STATE_IDLE;
-}
-
-void play(uint32_t start_sector, uint16_t nb_sectors)
-{
-  printf_P(PSTR("Start playing...\r\n"));
-
-  if (app.state != STATE_IDLE)
-    stop_all();
-  
-  app.state = STATE_IS_PLAYING;
-
-  /* Start the playback */
-  player_start(start_sector, nb_sectors, &end_of_playback);
-}
-
-void end_of_record(void)
-{
-  printf_P(PSTR("End of record\r\n"));
-  
-  recorder_stop();
-  app.state = STATE_IDLE;
-}
-
-void record(uint32_t start_sector, uint16_t nb_sectors)
-{
-  printf_P(PSTR("Start recording...\r\n"));
-  
-  if (app.state != STATE_IDLE)
-    stop_all();
-  
-  app.state = STATE_IS_RECORDING;
-  
-  /* Start the recording */
-  recorder_start(start_sector, nb_sectors, &end_of_record);
 }
 
 void init_leds(void)
@@ -153,17 +120,15 @@ void init_keyboard_polling(void)
 /* Keyboard polling interrupt */
 ISR(TIMER1_COMPA_vect)
 {
-  uint8_t event;
+  //onboard_led_toggle();
   
-  onboard_led_toggle();
-  
-  keyboard_update(&event);
-  
-  if (event & EVENT_KEY_PRESSED)
-    printf("P %i\r\n", event & KEYCODE_MASK);
-    
-  if (event & EVENT_KEY_RELEASED)
-    printf(" R %i\r\n", event & KEYCODE_MASK);
+  if (!app.key_event_flag)
+  {
+    /* Capture a new keyboard event if the previous one has
+       been acknowledged */
+    keyboard_update(&app.key_event);
+    app.key_event_flag = 1;
+  }
 }
 
 void hardware_init(void)
@@ -190,16 +155,167 @@ void hardware_init(void)
   sei();
 }
 
+void action_next_bank(void)
+{
+  if (app.bank >= NB_BANKS)
+    app.bank = 0;
+  else
+    app.bank++;
+    
+  printf("Switch to bank %u\r\n", app.bank);
+}
+
+void end_of_record(void)
+{
+  printf_P(PSTR("End of record\r\n"));
+  
+  recorder_stop();
+  app.state = STATE_IDLE;
+}
+
+void action_start_record(uint8_t slot)
+{
+  printf_P(PSTR("Start recording...\r\n"));
+  
+  if (app.state != STATE_IDLE)
+    stop_all();
+  
+  /* Start the recording */
+  recorder_start(slot * 64, 64, &end_of_record);
+}
+
+void end_of_playback(void)
+{
+  printf_P(PSTR("End of playback\r\n"));
+  
+  player_stop();
+  app.state = STATE_IDLE;
+}
+
+void action_start_play(uint8_t slot)
+{
+  printf_P(PSTR("Start playing...\r\n"));
+
+  if (app.state != STATE_IDLE)
+    stop_all();
+
+  /* Start the playback */
+  player_start(slot * 64, 64, &end_of_playback);
+}
+
+uint8_t handle_idle_state(void)
+{
+  uint8_t next_state = STATE_SAME;
+  
+  if (app.key_event_flag)
+  {
+    if (app.key_event & EVENT_KEY_RELEASED)
+    {
+      uint8_t keycode = app.key_event & KEYCODE_MASK;
+      
+      printf("R %i\r\n", keycode);
+
+      switch(keycode)
+      {
+        case KEYCODE_SW0:
+          action_next_bank();
+          next_state = STATE_SAME;
+          break;
+          
+        case KEYCODE_SW1:
+          printf("Wait for slot selection...\r\n");
+          PORTD |= _BV(PORTD6);
+          next_state = STATE_RECORD_SELECT_SLOT;
+          break;
+          
+        case KEYCODE_1:
+        case KEYCODE_2:
+        case KEYCODE_3:
+          action_start_play(keycode - KEYCODE_1);
+          next_state = STATE_PLAYING;
+          break;
+      }
+    }
+    
+    /* Acknowledged the event */
+    app.key_event_flag = 0;
+  }
+  
+  return next_state;
+}
+
+uint8_t handle_record_select_slot(void)
+{
+  uint8_t next_state = STATE_SAME;
+  
+  if (app.key_event_flag)
+  {
+    if (app.key_event & EVENT_KEY_RELEASED)
+    {
+      uint8_t keycode = app.key_event & KEYCODE_MASK;
+      
+      printf("R %i\r\n", keycode);
+
+      switch(keycode)
+      {
+        case KEYCODE_1:
+        case KEYCODE_2:
+        case KEYCODE_3:
+        case KEYCODE_4:
+        case KEYCODE_5:
+        case KEYCODE_6:
+        case KEYCODE_7:
+        case KEYCODE_8:
+        case KEYCODE_9:
+          PORTD &= ~_BV(PORTD6);
+          action_start_record(keycode - KEYCODE_1);
+          next_state = STATE_RECORDING;
+          break;
+          
+        default:
+          next_state = STATE_IDLE;
+          break;
+      }
+    }
+    
+    /* Acknowledged the event */
+    app.key_event_flag = 0;
+  }
+  
+  return next_state;
+}
+
 int application_main(void)
 {
   hardware_init();
 
   /* Init the application state */
   app.state = STATE_IDLE;
+  app.bank = 0;
+  app.key_event_flag = 0;
+  app.key_event = 0;
 
   /* Mainloop */
   while(1)
   {
+    uint8_t next_state;
+    
+    switch(app.state)
+    {
+      case STATE_IDLE:
+        next_state = handle_idle_state();
+        
+        if (next_state != STATE_SAME)
+          app.state = next_state;
+        break;
+        
+      case STATE_RECORD_SELECT_SLOT:
+        next_state = handle_record_select_slot();
+
+        if (next_state != STATE_SAME)
+          app.state = next_state;
+        break;
+    }
 
   }
 
