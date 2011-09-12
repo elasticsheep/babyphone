@@ -52,6 +52,9 @@ enum {
 
 #define NB_BANKS (3)
 
+#define SLOT_NB_BLOCKS (64)
+#define BANK_NB_SLOTS  (9)
+
 /*****************************************************************************
 * Definitions
 ******************************************************************************/
@@ -70,10 +73,21 @@ volatile struct {
 /*****************************************************************************
 * Function prototypes
 ******************************************************************************/
+void set_next_state(uint8_t next_state);
 
 /*****************************************************************************
 * Functions
 ******************************************************************************/
+
+uint32_t get_start_block(uint8_t bank, uint8_t slot)
+{
+  return (bank * BANK_NB_SLOTS * SLOT_NB_BLOCKS) + (slot * SLOT_NB_BLOCKS);
+}
+
+uint32_t get_slot_size(uint8_t bank, uint8_t slot)
+{
+  return SLOT_NB_BLOCKS;
+}
 
 void stop_all(void)
 {
@@ -170,7 +184,7 @@ void end_of_record(void)
   printf_P(PSTR("End of record\r\n"));
   
   recorder_stop();
-  app.state = STATE_IDLE;
+  set_next_state(STATE_IDLE);
 }
 
 void action_start_record(uint8_t slot)
@@ -181,7 +195,14 @@ void action_start_record(uint8_t slot)
     stop_all();
   
   /* Start the recording */
-  recorder_start(slot * 64, 64, &end_of_record);
+  recorder_start(get_start_block(app.bank, slot), get_slot_size(app.bank, slot), &end_of_record);
+}
+
+void action_stop_record(void)
+{
+  recorder_stop();
+  
+  printf("Record stopped.\r\n");
 }
 
 void end_of_playback(void)
@@ -189,7 +210,7 @@ void end_of_playback(void)
   printf_P(PSTR("End of playback\r\n"));
   
   player_stop();
-  app.state = STATE_IDLE;
+  set_next_state(STATE_IDLE);
 }
 
 void action_start_play(uint8_t slot)
@@ -200,7 +221,7 @@ void action_start_play(uint8_t slot)
     stop_all();
 
   /* Start the playback */
-  player_start(slot * 64, 64, &end_of_playback);
+  player_start(get_start_block(app.bank, slot), get_slot_size(app.bank, slot), &end_of_playback);
 }
 
 uint8_t handle_idle_state(void)
@@ -209,7 +230,7 @@ uint8_t handle_idle_state(void)
   
   if (app.key_event_flag)
   {
-    if (app.key_event & EVENT_KEY_RELEASED)
+    if (app.key_event & EVENT_KEY_PRESSED)
     {
       uint8_t keycode = app.key_event & KEYCODE_MASK;
       
@@ -250,7 +271,7 @@ uint8_t handle_record_select_slot(void)
   
   if (app.key_event_flag)
   {
-    if (app.key_event & EVENT_KEY_RELEASED)
+    if (app.key_event & EVENT_KEY_PRESSED)
     {
       uint8_t keycode = app.key_event & KEYCODE_MASK;
       
@@ -273,6 +294,7 @@ uint8_t handle_record_select_slot(void)
           break;
           
         default:
+          printf("Record cancelled\r\n");
           next_state = STATE_IDLE;
           break;
       }
@@ -283,6 +305,31 @@ uint8_t handle_record_select_slot(void)
   }
   
   return next_state;
+}
+
+uint8_t handle_recording(void)
+{
+  uint8_t next_state = STATE_SAME;
+  
+  if (app.key_event_flag)
+  {
+    if (app.key_event & EVENT_KEY_RELEASED)
+    {
+      action_stop_record();
+      next_state = STATE_IDLE;
+    }
+    
+    /* Acknowledged the event */
+    app.key_event_flag = 0;
+  }
+  
+  return next_state;
+}
+
+void set_next_state(uint8_t next_state)
+{
+  if (next_state != STATE_SAME)
+    app.state = next_state;
 }
 
 int application_main(void)
@@ -304,16 +351,17 @@ int application_main(void)
     {
       case STATE_IDLE:
         next_state = handle_idle_state();
-        
-        if (next_state != STATE_SAME)
-          app.state = next_state;
+        set_next_state(next_state);
         break;
         
       case STATE_RECORD_SELECT_SLOT:
         next_state = handle_record_select_slot();
-
-        if (next_state != STATE_SAME)
-          app.state = next_state;
+        set_next_state(next_state);
+        break;
+        
+      case STATE_RECORDING:
+        next_state = handle_recording();
+        set_next_state(next_state);
         break;
     }
 
