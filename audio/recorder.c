@@ -81,6 +81,14 @@ void recorder_stop(void)
   adc_stop();
   adc_shutdown();
   
+  /* Pad the remaining sectors with silence */
+  memset(pcm_buffer, 0x00, PCM_BUFFER_SIZE);
+  for(uint32_t sector = recorder.current_sector; sector < recorder.end_sector; sector++)
+  {
+    uint32_t wr_address = sector << 9;
+    sd_raw_write(wr_address, pcm_buffer, PCM_BUFFER_SIZE);
+  }
+  
   /* Reset the buffer event handler */
   set_buffer_event_handler(NULL);
   
