@@ -120,6 +120,7 @@ AUDIO_SRC = \
 APP_PATH = apps/babyphone
 SRC = \
       $(APP_PATH)/app_babyphone.c  \
+      $(APP_PATH)/slots.c          \
       driver/keyboard.c            \
       utils/main.c                 \
       utils/delay.c

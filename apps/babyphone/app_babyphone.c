@@ -38,6 +38,8 @@
 #include "sd_raw.h"
 #include "LUFA/Drivers/Peripheral/SerialStream.h"
 
+#include "slots.h"
+
 /*****************************************************************************
 * Constants
 ******************************************************************************/
@@ -49,11 +51,6 @@ enum {
   
   STATE_SAME = 0xFF,
 };
-
-#define NB_BANKS (3)
-
-#define SLOT_NB_BLOCKS (64)
-#define BANK_NB_SLOTS  (9)
 
 /*****************************************************************************
 * Definitions
@@ -78,16 +75,6 @@ void set_next_state(uint8_t next_state);
 /*****************************************************************************
 * Functions
 ******************************************************************************/
-
-uint32_t get_start_block(uint8_t bank, uint8_t slot)
-{
-  return (bank * BANK_NB_SLOTS * SLOT_NB_BLOCKS) + (slot * SLOT_NB_BLOCKS);
-}
-
-uint32_t get_slot_size(uint8_t bank, uint8_t slot)
-{
-  return SLOT_NB_BLOCKS;
-}
 
 void stop_all(void)
 {
@@ -171,7 +158,7 @@ void hardware_init(void)
 
 void action_next_bank(void)
 {
-  if (app.bank >= NB_BANKS)
+  if (app.bank >= get_nb_banks())
     app.bank = 0;
   else
     app.bank++;
@@ -195,7 +182,8 @@ void action_start_record(uint8_t slot)
     stop_all();
   
   /* Start the recording */
-  recorder_start(get_start_block(app.bank, slot), get_slot_size(app.bank, slot), &end_of_record);
+  printf("start block = %lu\r\n", get_start_block(app.bank, slot));
+  recorder_start(get_start_block(app.bank, slot), 64, &end_of_record);
 }
 
 void action_stop_record(void)
@@ -221,7 +209,9 @@ void action_start_play(uint8_t slot)
     stop_all();
 
   /* Start the playback */
-  player_start(get_start_block(app.bank, slot), get_slot_size(app.bank, slot), &end_of_playback);
+  printf("start block = %lu\r\n", get_start_block(app.bank, slot));
+  printf("content size = %lu\r\n", get_content_size(app.bank, slot));
+  player_start(get_start_block(app.bank, slot), get_content_size(app.bank, slot), &end_of_playback);
 }
 
 uint8_t handle_idle_state(void)
@@ -335,6 +325,11 @@ void set_next_state(uint8_t next_state)
 int application_main(void)
 {
   hardware_init();
+
+  /* Reset the content banks */
+  printf("Reset banks... ");
+  reset_banks();
+  printf("OK\r\n");
 
   /* Init the application state */
   app.state = STATE_IDLE;
