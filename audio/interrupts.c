@@ -65,7 +65,9 @@ ISR(TIMER0_COMPB_vect)
   TIMSK0 &= ~_BV(OCIE0B);
   
   /* Re-enable the interrupts to allow the execution of TIMER0_COMPA_vect */
-  //sei(); => cause glitch in the recording on buffer boundaries... (why ???)
+  // with sei() => glitches in the recording on buffer boundaries... (why ???)
+  // without seit() => glitches during playback
+  sei();
   
   /* Call the handler */
   if (buffer_event_handler)

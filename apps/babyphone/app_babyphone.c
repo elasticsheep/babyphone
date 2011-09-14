@@ -52,6 +52,12 @@ enum {
   STATE_SAME = 0xFF,
 };
 
+enum {
+  EVENT_NONE,
+  EVENT_END_OF_RECORD,
+  EVENT_END_OF_PLAYBACK,
+};
+
 /*****************************************************************************
 * Definitions
 ******************************************************************************/
@@ -65,6 +71,9 @@ volatile struct {
   
   uint8_t key_event_flag;
   uint8_t key_event;
+  
+  uint8_t media_event_flag;
+  uint8_t media_event;
 } app;
 
 /*****************************************************************************
@@ -109,7 +118,7 @@ void init_keyboard_polling(void)
 
 #if (F_CPU == 16000000)
   TCCR1B |= _BV(CS12); /* Fclk / 256 */
-  OCR1A = (uint16_t)(1250 - 1); /* 50 Hz */
+  OCR1A = (uint16_t)(625 - 1); /* 100 Hz */
 #else
 #error F_CPU not supported
 #endif
@@ -121,14 +130,22 @@ void init_keyboard_polling(void)
 /* Keyboard polling interrupt */
 ISR(TIMER1_COMPA_vect)
 {
-  //onboard_led_toggle();
+  uint8_t key_event;
   
   if (!app.key_event_flag)
   {
+    PORTD |= _BV(PORTD6);
+    
     /* Capture a new keyboard event if the previous one has
        been acknowledged */
-    keyboard_update(&app.key_event);
-    app.key_event_flag = 1;
+    keyboard_update(&key_event);
+    
+    if (key_event)
+    {
+      printf("K");
+      app.key_event = key_event;
+      app.key_event_flag = 1;
+    }
   }
 }
 
@@ -169,9 +186,9 @@ void action_next_bank(void)
 void end_of_record(void)
 {
   printf_P(PSTR("End of record\r\n"));
-  
-  recorder_stop();
-  set_next_state(STATE_IDLE);
+
+  app.media_event = EVENT_END_OF_RECORD;
+  app.media_event_flag = 1;
 }
 
 void action_start_record(uint8_t slot)
@@ -197,21 +214,36 @@ void end_of_playback(void)
 {
   printf_P(PSTR("End of playback\r\n"));
   
-  player_stop();
-  set_next_state(STATE_IDLE);
+  app.media_event = EVENT_END_OF_PLAYBACK;
+  app.media_event_flag = 1;
 }
 
 void action_start_play(uint8_t slot)
 {
-  printf_P(PSTR("Start playing...\r\n"));
-
+  uint32_t start_block, content_blocks;
+  uint16_t sampling_rate = 0;
+  
   if (app.state != STATE_IDLE)
     stop_all();
 
-  /* Start the playback */
-  printf("start block = %lu\r\n", get_start_block(app.bank, slot));
-  printf("content size = %lu\r\n", get_content_size(app.bank, slot));
-  player_start(get_start_block(app.bank, slot), get_content_size(app.bank, slot), &end_of_playback);
+  /* Read content position and size */
+  read_bank(app.bank, &sampling_rate);
+  read_bank_slot(app.bank, slot, &start_block, &content_blocks);
+  
+  printf("Bank sampling rate = %u\r\n", sampling_rate);
+  printf("Start block = %lu\r\n", start_block);
+  printf("Content blocks = %lu\r\n", content_blocks);
+
+  if (content_blocks > 0)
+  {
+    /* Start the playback */
+    printf_P(PSTR("Start playing...\r\n"));
+    player_start(start_block, content_blocks, &end_of_playback, sampling_rate);
+  }
+  else
+  {
+    printf_P(PSTR("Empty slot\r\n"));
+  }
 }
 
 uint8_t handle_idle_state(void)
@@ -223,8 +255,7 @@ uint8_t handle_idle_state(void)
     if (app.key_event & EVENT_KEY_PRESSED)
     {
       uint8_t keycode = app.key_event & KEYCODE_MASK;
-      
-      printf("R %i\r\n", keycode);
+      printf("P %i\r\n", keycode);
 
       switch(keycode)
       {
@@ -242,17 +273,48 @@ uint8_t handle_idle_state(void)
         case KEYCODE_1:
         case KEYCODE_2:
         case KEYCODE_3:
+        case KEYCODE_4:
+        case KEYCODE_5:
+        case KEYCODE_6:
+        case KEYCODE_7:
+        case KEYCODE_8:
+        case KEYCODE_9:
+        case KEYCODE_STAR:
+        case KEYCODE_0:
+        case KEYCODE_SHARP:
           action_start_play(keycode - KEYCODE_1);
           next_state = STATE_PLAYING;
           break;
       }
     }
-    
-    /* Acknowledged the event */
-    app.key_event_flag = 0;
   }
   
   return next_state;
+}
+
+uint8_t handle_playing_state(void)
+{
+  uint8_t next_state;
+  
+  if (app.media_event_flag)
+  {
+    player_stop();
+    return STATE_IDLE;
+  }
+  
+  if (app.key_event_flag)
+  {
+    if (app.key_event & EVENT_KEY_PRESSED)
+    {
+      player_stop();
+      
+      next_state = handle_idle_state();
+      if (next_state == STATE_SAME)
+        return STATE_IDLE;
+    }
+  }
+  
+  return STATE_SAME;
 }
 
 uint8_t handle_record_select_slot(void)
@@ -289,9 +351,6 @@ uint8_t handle_record_select_slot(void)
           break;
       }
     }
-    
-    /* Acknowledged the event */
-    app.key_event_flag = 0;
   }
   
   return next_state;
@@ -301,6 +360,12 @@ uint8_t handle_recording(void)
 {
   uint8_t next_state = STATE_SAME;
   
+  if (app.media_event_flag)
+  {
+    recorder_stop();
+    return STATE_IDLE;
+  }
+  
   if (app.key_event_flag)
   {
     if (app.key_event & EVENT_KEY_RELEASED)
@@ -308,9 +373,6 @@ uint8_t handle_recording(void)
       action_stop_record();
       next_state = STATE_IDLE;
     }
-    
-    /* Acknowledged the event */
-    app.key_event_flag = 0;
   }
   
   return next_state;
@@ -319,7 +381,10 @@ uint8_t handle_recording(void)
 void set_next_state(uint8_t next_state)
 {
   if (next_state != STATE_SAME)
+  {
+    printf("State %i => %i\r\n", app.state, next_state);
     app.state = next_state;
+  }
 }
 
 int application_main(void)
@@ -327,39 +392,58 @@ int application_main(void)
   hardware_init();
 
   /* Reset the content banks */
-  printf("Reset banks... ");
-  reset_banks();
-  printf("OK\r\n");
+  //printf("Reset banks... ");
+  //reset_banks();
+  //printf("OK\r\n");
 
   /* Init the application state */
   app.state = STATE_IDLE;
   app.bank = 0;
+  
   app.key_event_flag = 0;
   app.key_event = 0;
+
+  app.media_event_flag = 0;
+  app.media_event = 0;
 
   /* Mainloop */
   while(1)
   {
     uint8_t next_state;
     
-    switch(app.state)
+    if ((app.key_event_flag) || (app.media_event_flag))
     {
-      case STATE_IDLE:
-        next_state = handle_idle_state();
-        set_next_state(next_state);
-        break;
-        
-      case STATE_RECORD_SELECT_SLOT:
-        next_state = handle_record_select_slot();
-        set_next_state(next_state);
-        break;
-        
-      case STATE_RECORDING:
-        next_state = handle_recording();
-        set_next_state(next_state);
-        break;
-    }
+      /* Handle events */
+      switch(app.state)
+      {
+        case STATE_IDLE:
+          next_state = handle_idle_state();
+          set_next_state(next_state);
+          break;
 
+        case STATE_PLAYING:
+          next_state = handle_playing_state();
+          set_next_state(next_state);
+          break;
+
+        case STATE_RECORD_SELECT_SLOT:
+          next_state = handle_record_select_slot();
+          set_next_state(next_state);
+          break;
+
+        case STATE_RECORDING:
+          next_state = handle_recording();
+          set_next_state(next_state);
+          break;
+      }
+
+      /* Acknowledge the events */
+      app.key_event = 0;
+      app.key_event_flag = 0;
+      
+      app.media_event = 0;
+      app.media_event_flag = 0;
+    }
   }
 
   return 0;

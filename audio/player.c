@@ -55,7 +55,7 @@ void buffer_empty_handler(void);
 * Functions
 ******************************************************************************/
 
-void player_start(uint32_t start_sector, uint16_t nb_sectors, t_notify_eof notify_eof)
+void player_start(uint32_t start_sector, uint16_t nb_sectors, t_notify_eof notify_eof, uint16_t sampling_rate)
 {
   /* Init the player context */
   player.current_sector = start_sector;
@@ -64,7 +64,10 @@ void player_start(uint32_t start_sector, uint16_t nb_sectors, t_notify_eof notif
   player.notify_eof = notify_eof;
 
   /* Init the DAC */
-  dac_init(8000, CHANNELS_MONO);
+  if (sampling_rate == 0)
+    dac_init(8000, CHANNELS_MONO);
+  else
+    dac_init(sampling_rate, CHANNELS_MONO);
 
   /* Do some pre-buffering */
   sd_raw_read(player.current_sector << 9, pcm_buffer, PCM_BUFFER_SIZE * 2);

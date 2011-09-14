@@ -62,12 +62,17 @@ uint32_t get_nb_banks(void)
   return NB_BANKS;
 }
 
+uint32_t get_bank_start(uint8_t bank)
+{
+  return 0; // Bank 0 only
+}
+
 uint32_t get_start_block(uint8_t bank, uint8_t slot)
 {
   return BANK_SIZE * bank + 1 + (slot * SLOT_NB_BLOCKS);
 }
 
-uint32_t get_content_size(uint8_t bank, uint8_t slot)
+uint32_t get_content_blocks(uint8_t bank, uint8_t slot)
 {
   uint32_t content_size;
   uint32_t rd_address = (BANK_SIZE * (uint32_t)bank) * 512 + 4 * (uint32_t)slot;
@@ -101,4 +106,24 @@ void reset_banks(void)
     printf("0x%08lx\r\n", wr_address);
     sd_raw_write(wr_address, pcm_buffer, 512);
   }
+}
+
+void read_bank(uint8_t bank, uint16_t *sampling_rate)
+{
+  uint32_t bank_offset = 0;
+  uint32_t rd_address = (bank_offset << 9);
+  
+  sd_raw_read(rd_address + 2, sampling_rate, 2);
+}
+
+void read_bank_slot(uint8_t bank, uint8_t slot, uint32_t *start_block, uint32_t *content_blocks)
+{
+  uint32_t bank_offset = 0;
+  uint32_t rd_address = (bank_offset << 9) + 16 + (slot * 8);
+  uint32_t slot_offset;
+  
+  sd_raw_read(rd_address, &slot_offset, 4);
+  sd_raw_read(rd_address + 4, content_blocks, 4);
+  
+  *start_block = bank_offset + slot_offset;
 }
