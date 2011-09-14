@@ -3,7 +3,7 @@
 import struct
 import wave
 
-KEYCODE_TO_SLOT = {
+KEYCODE_TO_SLOT = [
     "1",
     "2",
     "3",
@@ -16,7 +16,7 @@ KEYCODE_TO_SLOT = {
     "star",
     "0",
     "sharp"
-}
+]
 
 # Compute the directory
 directory = []
@@ -51,7 +51,7 @@ with open("dtmf.bank", "w") as bank:
     # Write the files
     for keycode in KEYCODE_TO_SLOT:
         filename = "%s.wav" % keycode
-        w = wave.open("0.wav", "r")
+        w = wave.open(filename, "r")
         nb_blocks = w.getnframes() / 512
     
         for i in range(nb_blocks):
