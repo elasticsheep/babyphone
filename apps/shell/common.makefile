@@ -45,8 +45,8 @@ MCU ?= atmega32u4
 # Target board (see library "Board Types" documentation, USER or blank for projects not requiring
 # LUFA board drivers). If USER is selected, put custom board drivers in a directory called 
 # "Board" inside the application directory.
-BOARD        ?= HW0_TEENSY2_BREADBOARD
-BOARD_PREFIX ?= hw0_teensy2_breadboard
+BOARD        ?= 
+BOARD_PREFIX ?= 
 
 
 # Processor frequency.

@@ -1,12 +1,15 @@
-all: atmega328
+all: hw0_teensy2 hw1_atmega328
 
-clean: atmega328-clean
+clean: hw0_teensy2-clean hw1_atmega328-clean
 
-teensy2:
-	make -f teensy2.makefile
+hw0_teensy2:
+	make -f hw0_teensy2.makefile
 
-atmega328:
-	make -f atmega328.makefile
+hw0_teensy2-clean:
+	make -f hw0_teensy2.makefile clean
 
-atmega328-clean:
-	make -f atmega328.makefile clean
+hw1_atmega328:
+	make -f hw1_atmega328.makefile
+
+hw1_atmega328-clean:
+	make -f hw1_atmega328.makefile clean
