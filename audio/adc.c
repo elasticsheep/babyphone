@@ -82,9 +82,11 @@ void adc_init(void)
   ADCSRA = _BV(ADEN) | _BV(ADPS2) | _BV(ADPS1) | _BV(ADPS0); /* Enable the ADC, prescaler 128 */
   ADMUX |= _BV(REFS0) | _BV(ADLAR); /* AVCC ref with cap on AREF, left justify, mux on ADC0 */
 
+#ifdef __AVR_ATmega32U4__
   DDRF  &= ~_BV(PF0); /* Setup ADC0 as an input */
   DIDR0 |=  _BV(ADC0D); /* Disable the digital input buffer on PF0*/
-  
+#endif
+
   /* Init the buffer pool */
   memset(adc_buffer_pool, 0x00, sizeof(adc_buffer_pool));
   adc.current_buffer = 0;

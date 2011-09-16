@@ -7,9 +7,11 @@
  * published by the Free Software Foundation.
  */
 
+#include <stdio.h>
 #include <string.h>
 #include <avr/pgmspace.h>
 #include <avr/sleep.h>
+
 #include "fat.h"
 #include "fat_config.h"
 #include "partition.h"
@@ -25,7 +27,7 @@
 #include "adc.h"
 #include "buffer.h"
 
-#include "LUFA/Drivers/Peripheral/SerialStream.h"
+//#include "LUFA/Drivers/Peripheral/SerialStream.h"
 
 #define DEBUG 1
 
@@ -121,7 +123,7 @@ int application_main()
     /* we will just use ordinary idle mode */
     set_sleep_mode(SLEEP_MODE_IDLE);
 
-    SerialStream_Init(38400, false);
+    //SerialStream_Init(38400, false);
 
     while(1)
     {
@@ -433,6 +435,7 @@ int application_main()
 #endif
             else if(strncmp_P(command, PSTR("rawadc"), 3) == 0)
             {
+#ifdef __AVR_ATmega32U4__
                 /* Initialize the ADC on ADC0 */
                 ADCSRA = _BV(ADEN) | _BV(ADPS2) | _BV(ADPS1) | _BV(ADPS0); /* Enable the ADC, prescaler 128 */
                 ADMUX |= _BV(REFS0) | _BV(ADLAR); /* AVCC ref with cap on AREF, left justify, mux on ADC0 */
@@ -454,6 +457,7 @@ int application_main()
                     /* Print the sampled value */
                     printf_P(PSTR("%i\r\n"), ADCH);
                 }
+#endif
             }
             else if(strncmp_P(command, PSTR("adc"), 3) == 0)
             {

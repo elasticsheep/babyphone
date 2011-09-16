@@ -39,13 +39,14 @@
 #----------------------------------------------------------------------------
 
 # MCU name
-MCU = atmega32u4
+MCU ?= atmega32u4
 
 
 # Target board (see library "Board Types" documentation, USER or blank for projects not requiring
 # LUFA board drivers). If USER is selected, put custom board drivers in a directory called 
 # "Board" inside the application directory.
-BOARD  = USER
+BOARD        ?= HW0_TEENSY2_BREADBOARD
+BOARD_PREFIX ?= hw0_teensy2_breadboard
 
 
 # Processor frequency.
@@ -79,13 +80,14 @@ FORMAT = ihex
 
 
 # Target file name (without extension).
-TARGET = shell
+TARGET_NAME = shell
+TARGET = $(BOARD_PREFIX)/$(TARGET_NAME)
 
 
 # Object files directory
 #     To put object files in current directory, use a dot (.), do NOT make
 #     this an empty or blank macro!
-OBJDIR = obj
+OBJDIR = $(BOARD_PREFIX)/obj
 
 # Root path
 ROOT_PATH = ../..
@@ -94,8 +96,8 @@ ROOT_PATH = ../..
 # Path to the LUFA library
 LUFA_PATH = vendor/LUFA_091223
 LUFA_OPTS = 
-LUFA_SRC = \
-      $(LUFA_PATH)/LUFA/Drivers/Peripheral/SerialStream.c
+#LUFA_SRC = \
+#      $(LUFA_PATH)/LUFA/Drivers/Peripheral/SerialStream.c
 
 #------------------------------------------------------------------------------
 # sd-reader library
@@ -121,7 +123,7 @@ AUDIO_SRC = \
 
 #------------------------------------------------------------------------------
 # Application code
-APP_PATH = apps/$(TARGET)
+APP_PATH = apps/$(TARGET_NAME)
 SRC = \
       $(APP_PATH)/shell.c    \
       $(APP_PATH)/uart.c     \
@@ -377,7 +379,7 @@ OBJ = $(SRC:%.c=$(OBJDIR)/%.o) $(ASRC:%.S=$(OBJDIR)/%.o)
 LST = $(SRC:%.c=$(OBJDIR)/%.lst) $(ASRC:%.c=$(OBJDIR)/%.lst)
 
 # Compiler flags to generate dependency files.
-GENDEPFLAGS = -MD -MP -MF dep/$(@F).d
+GENDEPFLAGS = -MD -MP -MF $(BOARD_PREFIX)/dep/$(@F).d
 
 
 # Combine all necessary flags and optional flags.
@@ -568,15 +570,15 @@ clean_list:
 	$(REMOVE) $(SRC:%.c=$(OBJDIR)/%.lst)
 	$(REMOVE) $(SRC:.c=.s)
 	$(REMOVE) $(SRC:.c=.d)
-	$(REMOVE) dep/*
+	$(REMOVE) $(BOARD_PREFIX)/dep/*
 	
-	$(REMOVEDIR) dep
-	$(REMOVE) -rf obj
+	$(REMOVEDIR) $(BOARD_PREFIX)/dep
+	$(REMOVE) -rf $(BOARD_PREFIX)/obj
 
 
 
 # Include the dependency files.
--include $(shell mkdir dep 2>/dev/null) $(wildcard dep/*)
+-include $(shell mkdir $(BOARD_PREFIX)/dep 2>/dev/null) $(wildcard $(BOARD_PREFIX)/dep/*)
 
 
 # Listing of phony targets.

@@ -76,6 +76,7 @@ void dac_init(uint16_t rate, uint8_t channels)
   dac.rate = rate;
   dac.channels = channels;
   
+#ifdef __AVR_ATmega32U4__
   /* Init the internal PLL */
   PLLFRQ = _BV(PDIV2);
   PLLCSR = _BV(PLLE);
@@ -96,6 +97,7 @@ void dac_init(uint16_t rate, uint8_t channels)
   
   /* Enable the OC4B output */
   DDRB |= _BV(PORTB6);
+#endif
   
   /* Init the buffer pool */
   memset(dac_buffer_pool, 0x00, sizeof(dac_buffer_pool));
@@ -181,6 +183,7 @@ void dac_stop(void)
 void dac_timer_handler(void)
 {
   uint8_t l_sample = *dac.read_ptr++;
+#ifdef __AVR_ATmega32U4__
   OCR4A = l_sample;
   if (dac.channels == CHANNELS_STEREO)
   {
@@ -190,6 +193,7 @@ void dac_timer_handler(void)
   {
     OCR4B = l_sample;
   }
+#endif
 
   /* Check the buffer end */
   if (dac.read_ptr >= dac.end_ptr)
