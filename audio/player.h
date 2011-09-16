@@ -25,7 +25,14 @@
 
 typedef void (*t_notify_eof)(void);
 
-void player_start(uint32_t start_sector, uint16_t nb_sectors, t_notify_eof notify_eof, uint16_t sampling_rate);
+enum {
+  PLAYER_OPTION_SAMPLING_RATE,
+  PLAYER_OPTION_LOOP_MODE,
+};
+
+void player_init(void);
+void player_set_option(uint8_t option, uint32_t value);
+void player_start(uint32_t start_sector, uint16_t nb_sectors, t_notify_eof notify_eof);
 void player_stop(void);
 
 #endif /* PLAYER_H */

@@ -238,7 +238,11 @@ void action_start_play(uint8_t slot)
   {
     /* Start the playback */
     printf_P(PSTR("Start playing...\r\n"));
-    player_start(start_block, content_blocks, &end_of_playback, sampling_rate);
+    
+    player_set_option(PLAYER_OPTION_SAMPLING_RATE, sampling_rate);
+    player_set_option(PLAYER_OPTION_LOOP_MODE, 0);
+    
+    player_start(start_block, content_blocks, &end_of_playback);
   }
   else
   {
@@ -395,6 +399,9 @@ int application_main(void)
   //printf("Reset banks... ");
   //reset_banks();
   //printf("OK\r\n");
+
+  /* Init the player */
+  player_init();
 
   /* Init the application state */
   app.state = STATE_IDLE;

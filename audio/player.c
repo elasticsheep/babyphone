@@ -41,10 +41,16 @@
 ******************************************************************************/
 struct {
   t_notify_eof notify_eof;
+  uint32_t start_sector;
   uint32_t current_sector;
   uint32_t end_sector;
   uint8_t eof;
 } player;
+
+struct {
+  uint16_t sampling_rate;
+  uint8_t loop_mode;
+} player_options;
 
 /*****************************************************************************
 * Local prototypes
@@ -55,19 +61,41 @@ void buffer_empty_handler(void);
 * Functions
 ******************************************************************************/
 
-void player_start(uint32_t start_sector, uint16_t nb_sectors, t_notify_eof notify_eof, uint16_t sampling_rate)
+void player_init(void)
+{
+  /* Reset the player context and options */
+  memset(&player, 0x00, sizeof(player));
+  memset(&player_options, 0x00, sizeof(player_options));
+}
+
+void player_set_option(uint8_t option, uint32_t value)
+{
+  switch(option)
+  {
+    case PLAYER_OPTION_SAMPLING_RATE:
+      player_options.sampling_rate = (uint16_t)value;
+      break;
+      
+    case PLAYER_OPTION_LOOP_MODE:
+      player_options.loop_mode = (value > 0 ? 1 : 0);
+      break;
+  }
+}
+
+void player_start(uint32_t start_sector, uint16_t nb_sectors, t_notify_eof notify_eof)
 {
   /* Init the player context */
+  player.start_sector = start_sector;
   player.current_sector = start_sector;
   player.end_sector = start_sector + nb_sectors;
   player.eof = 0;
   player.notify_eof = notify_eof;
 
   /* Init the DAC */
-  if (sampling_rate == 0)
+  if (player_options.sampling_rate == 0)
     dac_init(8000, CHANNELS_MONO);
   else
-    dac_init(sampling_rate, CHANNELS_MONO);
+    dac_init(player_options.sampling_rate, CHANNELS_MONO);
 
   /* Do some pre-buffering */
   sd_raw_read(player.current_sector << 9, pcm_buffer, PCM_BUFFER_SIZE * 2);
@@ -113,14 +141,21 @@ void buffer_empty_handler(void)
       /* Detect end of file */
       if ((player.eof == 0) && (player.current_sector >= player.end_sector))
       {
-        player.eof = 1;
-        
-        /* Stop the dac */
-        dac_stop();
+        if (player_options.loop_mode)
+        {
+          player.current_sector = player.start_sector;
+        }
+        else
+        {
+          player.eof = 1;
 
-        /* Notify the client */
-        if (player.notify_eof)
-          player.notify_eof();
+          /* Stop the dac */
+          dac_stop();
+
+          /* Notify the client */
+          if (player.notify_eof)
+            player.notify_eof();
+        }
       }
       
       //printf_P(PSTR("\r\n"));
