@@ -108,6 +108,16 @@
 			 */
 			static inline void Serial_Init(const uint32_t BaudRate, const bool DoubleSpeed)
 			{
+#if defined(__AVR_ATmega328P__)
+				UCSR0A = (DoubleSpeed ? (1 << U2X0) : 0);
+				UCSR0B = ((1 << TXEN0)  | (1 << RXEN0));
+				UCSR0C = ((1 << UCSZ01) | (1 << UCSZ00));
+				
+				DDRD  |= (1 << 1);	
+				PORTD |= (1 << 0);
+				
+				UBRR0  = (DoubleSpeed ? SERIAL_2X_UBBRVAL(BaudRate) : SERIAL_UBBRVAL(BaudRate));
+#else
 				UCSR1A = (DoubleSpeed ? (1 << U2X1) : 0);
 				UCSR1B = ((1 << TXEN1)  | (1 << RXEN1));
 				UCSR1C = ((1 << UCSZ11) | (1 << UCSZ10));
@@ -116,11 +126,15 @@
 				PORTD |= (1 << 2);
 				
 				UBRR1  = (DoubleSpeed ? SERIAL_2X_UBBRVAL(BaudRate) : SERIAL_UBBRVAL(BaudRate));
+#endif
 			}
 
 			/** Turns off the USART driver, disabling and returning used hardware to their default configuration. */
 			static inline void Serial_ShutDown(void)
 			{
+#if defined(__AVR_ATmega328P__)
+
+#else
 				UCSR1A = 0;
 				UCSR1B = 0;
 				UCSR1C = 0;
@@ -129,6 +143,7 @@
 				PORTD &= ~(1 << 2);
 				
 				UBRR1  = 0;
+#endif
 			}
 			
 			/** Transmits a given byte through the USART.
@@ -137,8 +152,13 @@
 			 */
 			static inline void Serial_TxByte(const char DataByte)
 			{
+#if defined(__AVR_ATmega328P__)
+				while (!(UCSR0A & (1 << UDRE0)));
+				UDR0 = DataByte;
+#else
 				while (!(UCSR1A & (1 << UDRE1)));
 				UDR1 = DataByte;
+#endif
 			}
 
 			/** Receives a byte from the USART.
@@ -147,8 +167,13 @@
 			 */
 			static inline char Serial_RxByte(void)
 			{
+#if defined(__AVR_ATmega328P__)
+				while (!(UCSR0A & (1 << RXC0)));
+				return UDR0;
+#else
 				while (!(UCSR1A & (1 << RXC1)));
 				return UDR1; 
+#endif
 			}
 
 	/* Disable C linkage for C++ Compilers: */

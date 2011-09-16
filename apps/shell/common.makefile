@@ -96,8 +96,8 @@ ROOT_PATH = ../..
 # Path to the LUFA library
 LUFA_PATH = vendor/LUFA_091223
 LUFA_OPTS = 
-#LUFA_SRC = \
-#      $(LUFA_PATH)/LUFA/Drivers/Peripheral/SerialStream.c
+LUFA_SRC = \
+      $(LUFA_PATH)/LUFA/Drivers/Peripheral/SerialStream.c
 
 #------------------------------------------------------------------------------
 # sd-reader library
@@ -274,7 +274,7 @@ LDFLAGS += $(PRINTF_LIB) $(SCANF_LIB) $(MATH_LIB)
 #
 # Type: avrdude -c ?
 # to get a full listing.
-AVRDUDE_PROGRAMMER = avrispmkII
+AVRDUDE_PROGRAMMER = avrispmkii
 
 # com1 = serial port. Use lpt1 to connect to parallel port.
 AVRDUDE_PORT = usb

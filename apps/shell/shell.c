@@ -27,7 +27,9 @@
 #include "adc.h"
 #include "buffer.h"
 
-//#include "LUFA/Drivers/Peripheral/SerialStream.h"
+#include "delay.h"
+
+#include "LUFA/Drivers/Peripheral/SerialStream.h"
 
 #define DEBUG 1
 
@@ -123,7 +125,17 @@ int application_main()
     /* we will just use ordinary idle mode */
     set_sleep_mode(SLEEP_MODE_IDLE);
 
-    //SerialStream_Init(38400, false);
+    SerialStream_Init(38400, false);
+
+#if 0
+    /* Blinking led test */
+    while(1)
+    {
+      DDRB |= _BV(0);
+      PORTB ^= _BV(0);
+      delay_ms(500);
+    }
+#endif
 
     while(1)
     {
