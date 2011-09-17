@@ -93,9 +93,9 @@ void player_start(uint32_t start_sector, uint16_t nb_sectors, t_notify_eof notif
 
   /* Init the DAC */
   if (player_options.sampling_rate == 0)
-    dac_init(8000, CHANNELS_MONO);
+    dac_init(8000);
   else
-    dac_init(player_options.sampling_rate, CHANNELS_MONO);
+    dac_init(player_options.sampling_rate);
 
   /* Do some pre-buffering */
   sd_raw_read(player.current_sector << 9, pcm_buffer, PCM_BUFFER_SIZE * 2);
@@ -129,7 +129,7 @@ void buffer_empty_handler(void)
   
   if (empty_buffer_flag)
   {
-      //printf_P(PSTR("E"));
+      //printf("E");
     
       p = (uint8_t*)pcm_buffer + (empty_buffer_flag & 0x1) * PCM_BUFFER_SIZE;
       sd_raw_read(rd_address, p, PCM_BUFFER_SIZE);
@@ -158,6 +158,6 @@ void buffer_empty_handler(void)
         }
       }
       
-      //printf_P(PSTR("\r\n"));
+      //printf("\r\n");
   }
 }

@@ -33,7 +33,7 @@ enum {
   CHANNELS_STEREO,
 };
 
-void dac_init(uint16_t rate, uint8_t channels);
+void dac_init(uint16_t rate);
 void dac_start(uint8_t* buffer0, uint8_t* buffer1, uint16_t size);
 void dac_stop(void);
 void dac_pause(void);

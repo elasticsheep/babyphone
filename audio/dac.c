@@ -23,7 +23,8 @@
 /*****************************************************************************
 * Hardware resources used:
 *   Timer0 A & B interrupts
-*   Timer4 Fast PWM on A & B outputs (PC7 & PB6)
+*   ATmega32U4: Timer4 Fast PWM on A output (PC7)
+*   ATmega328P: Timer2 Fast PWM on B output (PD3)
 ******************************************************************************/
 
 /*****************************************************************************
@@ -33,7 +34,6 @@
 #include <string.h>
 #include <avr/interrupt.h>
 #include <avr/io.h>
-#include <avr/pgmspace.h>
 
 #include "dac.h"
 #include "interrupts.h"
@@ -48,7 +48,6 @@ typedef struct dac_packet {
 
 static struct {
   uint16_t rate;
-  uint8_t  channels;
   uint8_t  current_buffer;
   uint8_t* read_ptr;
   uint8_t* end_ptr;
@@ -58,51 +57,66 @@ static struct {
 * Globals
 ******************************************************************************/
 t_dac_buffer dac_buffer_pool[2];
-
 volatile uint8_t empty_buffer_flag;
-
 
 /*****************************************************************************
 * Local prototypes
 ******************************************************************************/
+void dac_start_pwm(void);
+void dac_stop_pwm(void);
+
 void dac_timer_handler(void);
 
 /*****************************************************************************
 * Functions
 ******************************************************************************/
 
-void dac_init(uint16_t rate, uint8_t channels)
+void dac_init(uint16_t rate)
 {
+  /* Store the parameter */
   dac.rate = rate;
-  dac.channels = channels;
   
-#ifdef __AVR_ATmega32U4__
+  /* Init the buffer pool */
+  memset(dac_buffer_pool, 0x00, sizeof(dac_buffer_pool));
+  dac.current_buffer = 0;
+  dac.read_ptr = NULL;
+}
+
+void dac_start_pwm(void)
+{
+#if defined(__AVR_ATmega32U4__)
   /* Init the internal PLL */
   PLLFRQ = _BV(PDIV2);
   PLLCSR = _BV(PLLE);
   while(!(PLLCSR & _BV(PLOCK)));
   PLLFRQ |= _BV(PLLTM0); /* PCK 48MHz */
   
-  /* Init a fast PWM on Timer4 */
+  /* Start a fast PWM on Timer4 */
   TCCR4A = _BV(COM4A0) | _BV(PWM4A); /* Clear OC4A on Compare Match */
   TCCR4B = _BV(CS40); /* No prescaling => f = PCK/256 = 187500Hz */
-  OCR4A = 0;
+  OCR4A = 128;
   
   /* Enable the OC4A output */
   DDRC |= _BV(PORTC7);
+#elif defined(__AVR_ATmega328P__)
+  /* Start a fast PWM on Timer2 */
+  TCCR2A = _BV(COM2B1) | _BV(WGM21) | _BV(WGM20); /* Fast PWM, Clear OC2B on Compare Match */
+  TCCR2B = _BV(CS20); /* No prescaling => f = F_CPU/256 = 62500Hz */
+  OCR2B = 128;
   
-  /* Enable a second PWM channel */
-  TCCR4A |= _BV(COM4B1) | _BV(PWM4B);
-  OCR4B = 0;
-  
-  /* Enable the OC4B output */
-  DDRB |= _BV(PORTB6);
+  /* Enable the OC2B output driver */
+  DDRD |= _BV(PORTD3);
 #endif
+}
+
+void dac_stop_pwm(void)
+{
+#if defined(__AVR_ATmega328P__)
+  TCCR2A = TCCR2B = OCR2B = 0;
   
-  /* Init the buffer pool */
-  memset(dac_buffer_pool, 0x00, sizeof(dac_buffer_pool));
-  dac.current_buffer = 0;
-  dac.read_ptr = NULL;
+  /* Disable the OC2B output driver */
+  DDRD &= ~_BV(PORTD3);
+#endif
 }
 
 void dac_start(uint8_t* buffer0, uint8_t* buffer1, uint16_t size)
@@ -158,6 +172,9 @@ void dac_start(uint8_t* buffer0, uint8_t* buffer1, uint16_t size)
   /* Enable the sample timer interrupt */
   TIMSK0 |= _BV(OCIE0A) | _BV(OCIE0B);
   
+  /* Start the PWM output */
+  dac_start_pwm();
+  
   /* Enable interrupts */
   sei();
 }
@@ -177,29 +194,26 @@ void dac_stop(void)
   /* Stop the sample timer interrupt */
   TCCR0A = TCCR0B = OCR0A = TIMSK0 = 0;
   
+  /* Stop the PWM output */
+  dac_start_pwm();
+  
   set_sample_timer_handler(NULL);
 }
 
 void dac_timer_handler(void)
 {
   uint8_t l_sample = *dac.read_ptr++;
-#ifdef __AVR_ATmega32U4__
+#if defined(__AVR_ATmega32U4__)
   OCR4A = l_sample;
-  if (dac.channels == CHANNELS_STEREO)
-  {
-    OCR4B = *dac.read_ptr++;
-  }
-  else
-  {
-    OCR4B = l_sample;
-  }
+#elif defined(__AVR_ATmega328P__)
+  OCR2B = l_sample;
 #endif
 
   /* Check the buffer end */
   if (dac.read_ptr >= dac.end_ptr)
   {
     /* Notify the client */
-    empty_buffer_flag = dac.current_buffer + (1 << 4);
+    empty_buffer_flag = 0x80 + dac.current_buffer;
 
     /* Raise a buffer empty interrupt */
     TIMSK0 |= _BV(OCIE0B);

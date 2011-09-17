@@ -112,9 +112,6 @@ LUFA_SRC = \
 SD_READER_PATH = vendor/sd-reader_source_20090330-teensy
 SD_READER_OPTS =
 SD_READER_SRC = \
-      $(SD_READER_PATH)/byteordering.c \
-      $(SD_READER_PATH)/fat.c          \
-      $(SD_READER_PATH)/partition.c    \
       $(SD_READER_PATH)/sd_raw.c
 
 #------------------------------------------------------------------------------
@@ -126,8 +123,7 @@ AUDIO_SRC = \
       $(AUDIO_PATH)/dac.c         \
       $(AUDIO_PATH)/interrupts.c  \
       $(AUDIO_PATH)/player.c      \
-      $(AUDIO_PATH)/recorder.c    \
-      $(AUDIO_PATH)/wavparser.c
+      $(AUDIO_PATH)/recorder.c
 
 #------------------------------------------------------------------------------
 # Application code
