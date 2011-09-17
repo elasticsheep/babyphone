@@ -116,14 +116,15 @@ void bank_read(uint8_t bank, uint16_t *sampling_rate)
   sd_raw_read(rd_address + 2, sampling_rate, 2);
 }
 
-void bank_read_slot(uint8_t bank, uint8_t slot, uint32_t *start_block, uint32_t *nb_content_blocks)
+void bank_read_slot(uint8_t bank, uint8_t slot, uint32_t *start_block, uint16_t *max_content_blocks, uint16_t *nb_content_blocks)
 {
   uint32_t bank_offset = 0;
   uint32_t rd_address = (bank_offset << 9) + 16 + (slot * 8);
   uint32_t slot_offset;
   
   sd_raw_read(rd_address, &slot_offset, 4);
-  sd_raw_read(rd_address + 4, nb_content_blocks, 4);
+  sd_raw_read(rd_address + 4, max_content_blocks, 2);
+  sd_raw_read(rd_address + 6, nb_content_blocks, 2);
   
   *start_block = bank_offset + slot_offset;
 }
