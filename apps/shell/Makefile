@@ -38,16 +38,23 @@
 # To rebuild project do "make clean" then "make all".
 #----------------------------------------------------------------------------
 
-# MCU name
-MCU ?= atmega32u4
+# HW target:
+# - hw0 = Teensy2 prototype on breadboard
+# - hw1 = ATmega328 final design
+HW ?= hw1
 
+# MCU name
+ifeq ($(HW),hw0)
+MCU = atmega32u4
+endif
+ifeq ($(HW),hw1)
+MCU = atmega328p
+endif
 
 # Target board (see library "Board Types" documentation, USER or blank for projects not requiring
 # LUFA board drivers). If USER is selected, put custom board drivers in a directory called 
 # "Board" inside the application directory.
-BOARD        ?= 
-BOARD_PREFIX ?= 
-
+BOARD = USER
 
 # Processor frequency.
 #     This will define a symbol, F_CPU, in all source code files equal to the 
@@ -81,13 +88,14 @@ FORMAT = ihex
 
 # Target file name (without extension).
 TARGET_NAME = shell
-TARGET = $(BOARD_PREFIX)/$(TARGET_NAME)
+TARGET = $(TARGET_NAME)-$(HW)
 
 
 # Object files directory
 #     To put object files in current directory, use a dot (.), do NOT make
 #     this an empty or blank macro!
-OBJDIR = $(BOARD_PREFIX)/obj
+OBJDIR = obj-$(HW)
+DEPDIR = dep-$(HW)
 
 # Root path
 ROOT_PATH = ../..
@@ -379,7 +387,7 @@ OBJ = $(SRC:%.c=$(OBJDIR)/%.o) $(ASRC:%.S=$(OBJDIR)/%.o)
 LST = $(SRC:%.c=$(OBJDIR)/%.lst) $(ASRC:%.c=$(OBJDIR)/%.lst)
 
 # Compiler flags to generate dependency files.
-GENDEPFLAGS = -MD -MP -MF $(BOARD_PREFIX)/dep/$(@F).d
+GENDEPFLAGS = -MD -MP -MF $(DEPDIR)/$(@F).d
 
 
 # Combine all necessary flags and optional flags.
@@ -570,15 +578,15 @@ clean_list:
 	$(REMOVE) $(SRC:%.c=$(OBJDIR)/%.lst)
 	$(REMOVE) $(SRC:.c=.s)
 	$(REMOVE) $(SRC:.c=.d)
-	$(REMOVE) $(BOARD_PREFIX)/dep/*
+	$(REMOVE) $(DEPDIR)/*
 	
-	$(REMOVEDIR) $(BOARD_PREFIX)/dep
-	$(REMOVE) -rf $(BOARD_PREFIX)/obj
+	$(REMOVEDIR) $(DEPDIR)
+	$(REMOVE) -rf $(OBJDIR)
 
 
 
 # Include the dependency files.
--include $(shell mkdir $(BOARD_PREFIX)/dep 2>/dev/null) $(wildcard $(BOARD_PREFIX)/dep/*)
+-include $(shell mkdir $(DEPDIR) 2>/dev/null) $(wildcard $(DEPDIR)/*)
 
 
 # Listing of phony targets.
