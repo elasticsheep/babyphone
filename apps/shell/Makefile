@@ -131,6 +131,7 @@ APP_PATH = apps/$(TARGET_NAME)
 SRC = \
       $(APP_PATH)/shell.c    \
       $(APP_PATH)/uart.c     \
+      drivers/banks.c        \
       utils/main.c           \
       utils/delay.c
 
@@ -170,6 +171,7 @@ EXTRAINCDIRS = \
     $(ROOT_PATH)/$(AUDIO_PATH)/      \
     $(ROOT_PATH)/$(LUFA_PATH)/       \
     $(ROOT_PATH)/$(SD_READER_PATH)/  \
+    $(ROOT_PATH)/drivers             \
     $(ROOT_PATH)/utils
 
 

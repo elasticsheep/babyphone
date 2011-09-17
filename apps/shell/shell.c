@@ -7,6 +7,9 @@
  * published by the Free Software Foundation.
  */
 
+/*****************************************************************************
+* Includes
+******************************************************************************/
 #include <stdio.h>
 #include <string.h>
 #include <avr/pgmspace.h>
@@ -18,6 +21,7 @@
 
 #include <stdio.h>
 
+#include "banks.h"
 #include "player.h"
 #include "recorder.h"
 
@@ -28,11 +32,21 @@
 
 #include "LUFA/Drivers/Peripheral/SerialStream.h"
 
-static uint8_t read_line(char* buffer, uint8_t buffer_length);
-static uint32_t strtolong(const char* str);
+/*****************************************************************************
+* Globals
+******************************************************************************/
+uint8_t IsPlaying = 0;
+uint8_t IsRecording = 0;
 
-static uint8_t IsPlaying = 0;
-static uint8_t IsRecording = 0;
+/*****************************************************************************
+* Local prototypes
+******************************************************************************/
+uint8_t read_line(char* buffer, uint8_t buffer_length);
+uint32_t strtolong(const char* str);
+
+/*****************************************************************************
+* Functions
+******************************************************************************/
 
 void buffer_event(void)
 {
@@ -58,6 +72,40 @@ void play(uint32_t start_sector, uint16_t nb_sectors)
 
   /* Start the playback */
   player_start(start_sector, nb_sectors, &end_of_playback);
+}
+
+void play_slot(uint8_t slot)
+{
+  uint32_t start_block, content_blocks;
+  uint16_t sampling_rate = 0;
+
+  if (IsPlaying)
+    player_stop();
+  
+  IsPlaying = 1;
+
+  /* Read content position and size */
+  bank_read(0, &sampling_rate);
+  bank_read_slot(0, slot, &start_block, &content_blocks);
+
+  printf("Bank sampling rate = %u\r\n", sampling_rate);
+  printf("Start block = %lu\r\n", start_block);
+  printf("Content blocks = %lu\r\n", content_blocks);
+
+  if (content_blocks > 0)
+  {
+    /* Start the playback */
+    printf_P(PSTR("Start playing...\r\n"));
+    
+    player_set_option(PLAYER_OPTION_SAMPLING_RATE, sampling_rate);
+    player_set_option(PLAYER_OPTION_LOOP_MODE, 0);
+    
+    player_start(start_block, content_blocks, &end_of_playback);
+  }
+  else
+  {
+    printf_P(PSTR("Empty slot\r\n"));
+  }
 }
 
 void end_of_record(void)
@@ -203,9 +251,18 @@ int application_main()
             {
                 fill(0, 128);
             }
-            else if(strncmp_P(command, PSTR("play"), 4) == 0)
+            else if(strncmp_P(command, PSTR("play\0"), 5) == 0)
             {
                 play(0, 64);
+            }
+            else if(strncmp_P(command, PSTR("playslot "), 9) == 0)
+            {
+                command += 9;
+                if(command[0] == '\0')
+                    continue;
+
+                uint32_t slot = strtolong(command);
+                play_slot((uint8_t)slot);
             }
             else
             {
