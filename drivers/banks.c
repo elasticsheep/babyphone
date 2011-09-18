@@ -135,3 +135,15 @@ void bank_read_slot(uint8_t bank, uint8_t slot, uint32_t *start_block, uint16_t 
   if (nb_content_blocks)
     sd_raw_read(rd_address + 6, (uint8_t*)nb_content_blocks, 2);
 }
+
+void bank_write_slot_content_size(uint8_t bank, uint8_t slot, uint16_t nb_content_blocks)
+{
+  uint32_t bank_offset = 0;
+  uint32_t rd_address = (bank_offset << 9) + 16 + (slot * 8);
+  uint32_t slot_offset;
+  
+  printf("%i\r\n", nb_content_blocks);
+  
+  sd_raw_write(rd_address + 6, (uint8_t*)&nb_content_blocks, 2);
+  sd_raw_sync();
+}

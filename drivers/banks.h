@@ -27,4 +27,6 @@ uint32_t get_content_blocks(uint8_t bank, uint8_t slot);
 void bank_read(uint8_t bank, uint16_t *sampling_rate);
 void bank_read_slot(uint8_t bank, uint8_t slot, uint32_t *start_block, uint16_t *max_content_blocks, uint16_t *nb_content_blocks);
 
+void bank_write_slot_content_size(uint8_t bank, uint8_t slot, uint16_t nb_content_blocks);
+
 void reset_banks(void);

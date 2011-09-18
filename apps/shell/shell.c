@@ -81,7 +81,8 @@ void play(uint32_t start_sector, uint16_t nb_sectors)
 
 void play_slot(uint8_t slot)
 {
-  uint32_t start_block, content_blocks;
+  uint32_t start_block;
+  uint16_t content_blocks;
   uint16_t sampling_rate = 0;
 
   if (IsPlaying)
@@ -95,7 +96,7 @@ void play_slot(uint8_t slot)
 
   printf("Bank sampling rate = %u\r\n", sampling_rate);
   printf("Start block = %lu\r\n", start_block);
-  printf("Content blocks = %lu\r\n", content_blocks);
+  printf("Content blocks = %u\r\n", content_blocks);
 
   if (content_blocks > 0)
   {
@@ -113,12 +114,19 @@ void play_slot(uint8_t slot)
   }
 }
 
-void end_of_record(void)
+void end_of_record(void* opaque)
 {
-  printf_P(PSTR("End of record\r\n"));
+  uint16_t nb_written_blocks;
   
-  recorder_stop();
-  IsRecording = 1;
+  printf_P(PSTR("End of record slot %i\r\n"), (uint8_t)opaque);
+  
+  recorder_stop(&nb_written_blocks);
+  IsRecording = 0;
+  
+  printf("Written blocks = %u\r\n", nb_written_blocks);
+  
+  /* Update the slot header */
+  bank_write_slot_content_size(0, (uint8_t)opaque, nb_written_blocks);
 }
 
 void record(uint32_t start_sector, uint16_t nb_sectors)
@@ -126,12 +134,44 @@ void record(uint32_t start_sector, uint16_t nb_sectors)
   printf_P(PSTR("Start recording...\r\n"));
   
   if (IsRecording)
-    recorder_stop();
+    recorder_stop(NULL);
   
   IsRecording = 1;
   
   /* Start the recording */
-  recorder_start(start_sector, nb_sectors, &end_of_record);
+  recorder_start(start_sector, nb_sectors, &end_of_record, NULL);
+}
+
+void record_slot(uint8_t slot)
+{
+  uint32_t start_block;
+  uint16_t max_content_blocks;
+  uint16_t sampling_rate = 0;
+
+  if (IsRecording)
+    recorder_stop(NULL);
+  
+  IsRecording = 1;
+
+  /* Read content position and max size */
+  bank_read(0, &sampling_rate);
+  bank_read_slot(0, slot, &start_block, &max_content_blocks, NULL);
+
+  printf("Bank sampling rate = %u\r\n", sampling_rate);
+  printf("Start block = %lu\r\n", start_block);
+  printf("Max content blocks = %u\r\n", max_content_blocks);
+
+  if (max_content_blocks > 0)
+  {
+    /* Start the recording */
+    printf_P(PSTR("Start recording...\r\n"));
+
+    recorder_start(start_block, max_content_blocks, &end_of_record, (void*)slot);
+  }
+  else
+  {
+    printf_P(PSTR("No blocks in slot\r\n"));
+  }
 }
 
 void fill(uint32_t start_sector, uint16_t nb_sectors)
@@ -246,18 +286,18 @@ int application_main()
                 adc_init(0);
                 adc_start(&pcm_buffer[0], &pcm_buffer[PCM_BUFFER_SIZE], PCM_BUFFER_SIZE);
             }
-            else if(strncmp_P(command, PSTR("rec"), 3) == 0)
+            else if(strncmp_P(command, PSTR("rec\0"), 4) == 0)
             {
                 record(0, 64);
             }
             else if(strncmp_P(command, PSTR("recslot "), 8) == 0)
             {
-                command += 9;
+                command += 8;
                 if(command[0] == '\0')
                     continue;
 
                 uint32_t slot = strtolong(command);
-                //record_slot((uint8_t)slot);
+                record_slot((uint8_t)slot);
             }
             else if(strncmp_P(command, PSTR("erase"), 5) == 0)
             {
@@ -279,6 +319,22 @@ int application_main()
 
                 uint32_t slot = strtolong(command);
                 play_slot((uint8_t)slot);
+            }
+            else if(strncmp_P(command, PSTR("ls\0"), 3) == 0)
+            {
+              uint8_t i;
+              uint32_t start_block;
+              uint16_t max_content_blocks;
+              uint16_t nb_content_blocks;
+              
+              printf("Bank 0\r\n");
+              for(i = 0; i < 20; i++)
+              {
+                bank_read_slot(0, i, &start_block, &max_content_blocks, &nb_content_blocks);
+                
+                printf("Slot %02i: 0x%04x ", i, start_block);
+                printf("%u/%u\r\n", nb_content_blocks, max_content_blocks);
+              }
             }
             else
             {

@@ -23,9 +23,9 @@
 #ifndef RECORDER_H
 #define RECORDER_H
 
-typedef void (*t_recorder_notify_eof)(void);
+typedef void (*t_recorder_notify_eof)(void* opaque);
 
-void recorder_start(uint32_t start_sector, uint16_t nb_sectors, t_recorder_notify_eof notify_eof);
-void recorder_stop(void);
+void recorder_start(uint32_t start_sector, uint16_t max_sectors, t_recorder_notify_eof notify_eof, void* opaque);
+void recorder_stop(uint16_t* nb_written_sectors);
 
 #endif /* RECORDER_H */

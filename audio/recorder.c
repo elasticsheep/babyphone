@@ -43,6 +43,7 @@
 ******************************************************************************/
 struct {
   t_recorder_notify_eof notify_eof;
+  void* opaque;
   uint32_t start_sector;
   uint32_t current_sector;
   uint32_t end_sector;
@@ -59,13 +60,14 @@ void buffer_full_handler(void);
 * Functions
 ******************************************************************************/
 
-void recorder_start(uint32_t start_sector, uint16_t nb_sectors, t_recorder_notify_eof notify_eof)
+void recorder_start(uint32_t start_sector, uint16_t max_sectors, t_recorder_notify_eof notify_eof, void* opaque)
 {
   /* Init the recorder context */
   recorder.start_sector = start_sector;
   recorder.current_sector = start_sector;
-  recorder.end_sector = start_sector + nb_sectors;
+  recorder.end_sector = start_sector + max_sectors;
   recorder.notify_eof = notify_eof;
+  recorder.opaque = opaque;
   recorder.eof = 0;
   
   recorder.loop_mode = 0;
@@ -80,7 +82,7 @@ void recorder_start(uint32_t start_sector, uint16_t nb_sectors, t_recorder_notif
   adc_start(pcm_buffer, pcm_buffer + PCM_BUFFER_SIZE, PCM_BUFFER_SIZE);
 }
 
-void recorder_stop(void)
+void recorder_stop(uint16_t* nb_written_sectors)
 {
   /* Stop and shutdown the ADC */
   adc_stop();
@@ -97,9 +99,9 @@ void recorder_stop(void)
   /* Reset the buffer event handler */
   set_buffer_event_handler(NULL);
   
-  /* Reset the context */
-  recorder.current_sector = 0;
-  recorder.end_sector = 0;
+  /* Return the number of written sectors */
+  if (nb_written_sectors)
+    *nb_written_sectors = (uint16_t)(recorder.current_sector - recorder.start_sector);
 }
 
 void buffer_full_handler(void)
@@ -135,7 +137,7 @@ void buffer_full_handler(void)
 
           /* Notify the client */
           if (recorder.notify_eof)
-            recorder.notify_eof();
+            recorder.notify_eof(recorder.opaque);
         }
       }
       
