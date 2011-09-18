@@ -78,7 +78,7 @@ uint32_t get_content_blocks(uint8_t bank, uint8_t slot)
   uint32_t rd_address = (BANK_SIZE * (uint32_t)bank) * 512 + 4 * (uint32_t)slot;
   
   printf("0x%08lx\r\n", rd_address);
-  sd_raw_read(rd_address, &content_size, 4);
+  sd_raw_read(rd_address, (uint8_t*)&content_size, 4);
   
   if ((content_size > 0) && (content_size <= SLOT_NB_BLOCKS))
     return content_size;
@@ -113,7 +113,8 @@ void bank_read(uint8_t bank, uint16_t *sampling_rate)
   uint32_t bank_offset = 0;
   uint32_t rd_address = (bank_offset << 9);
   
-  sd_raw_read(rd_address + 2, sampling_rate, 2);
+  if (sampling_rate)
+    sd_raw_read(rd_address + 2, (uint8_t*)sampling_rate, 2);
 }
 
 void bank_read_slot(uint8_t bank, uint8_t slot, uint32_t *start_block, uint16_t *max_content_blocks, uint16_t *nb_content_blocks)
@@ -122,9 +123,15 @@ void bank_read_slot(uint8_t bank, uint8_t slot, uint32_t *start_block, uint16_t 
   uint32_t rd_address = (bank_offset << 9) + 16 + (slot * 8);
   uint32_t slot_offset;
   
-  sd_raw_read(rd_address, &slot_offset, 4);
-  sd_raw_read(rd_address + 4, max_content_blocks, 2);
-  sd_raw_read(rd_address + 6, nb_content_blocks, 2);
+  if (start_block)
+  {
+    sd_raw_read(rd_address, (uint8_t*)&slot_offset, 4);
+    *start_block = bank_offset + slot_offset;
+  }
   
-  *start_block = bank_offset + slot_offset;
+  if (max_content_blocks)
+    sd_raw_read(rd_address + 4, (uint8_t*)max_content_blocks, 2);
+  
+  if (nb_content_blocks)
+    sd_raw_read(rd_address + 6, (uint8_t*)nb_content_blocks, 2);
 }

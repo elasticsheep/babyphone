@@ -23,7 +23,7 @@
 #ifndef ADC_H
 #define ADC_H
 
-void adc_init(void);
+void adc_init(uint8_t vad);
 void adc_shutdown(void);
 void adc_start(uint8_t* buffer0, uint8_t* buffer1, uint16_t size);
 void adc_stop(void);

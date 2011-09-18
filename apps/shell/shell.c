@@ -25,6 +25,7 @@
 #include "player.h"
 #include "recorder.h"
 
+#include "dac.h"
 #include "adc.h"
 #include "buffer.h"
 
@@ -51,6 +52,10 @@ uint32_t strtolong(const char* str);
 void buffer_event(void)
 {
   printf("B");
+  
+  /* Acknowledge the event */
+  empty_buffer_flag = 0;
+  buffer_full_flag = 0;
 }
 
 void end_of_playback(void)
@@ -86,7 +91,7 @@ void play_slot(uint8_t slot)
 
   /* Read content position and size */
   bank_read(0, &sampling_rate);
-  bank_read_slot(0, slot, &start_block, &content_blocks);
+  bank_read_slot(0, slot, &start_block, NULL, &content_blocks);
 
   printf("Bank sampling rate = %u\r\n", sampling_rate);
   printf("Start block = %lu\r\n", start_block);
@@ -208,14 +213,17 @@ int application_main()
             }
             else if(strncmp_P(command, PSTR("rawadc"), 3) == 0)
             {
-#ifdef __AVR_ATmega32U4__
                 /* Initialize the ADC on ADC0 */
                 ADCSRA = _BV(ADEN) | _BV(ADPS2) | _BV(ADPS1) | _BV(ADPS0); /* Enable the ADC, prescaler 128 */
                 ADMUX |= _BV(REFS0) | _BV(ADLAR); /* AVCC ref with cap on AREF, left justify, mux on ADC0 */
 
+#ifdef __AVR_ATmega32U4__
                 DDRF  &= ~_BV(PF0); /* Setup ADC0 as an input */
                 DIDR0 |=  _BV(ADC0D); /* Disable the digital input buffer on PF0*/
-                
+#elif defined(__AVR_ATmega328P__)
+                DDRC &= ~_BV(PC0); /* Setup ADC0 as an input */
+                DIDR0 |=  _BV(ADC0D); /* Disable the digital input buffer on PC0*/
+#endif
                 while(1)
                 {
                     /* Start a conversion */
@@ -230,18 +238,26 @@ int application_main()
                     /* Print the sampled value */
                     printf_P(PSTR("%i\r\n"), ADCH);
                 }
-#endif
             }
             else if(strncmp_P(command, PSTR("adc"), 3) == 0)
             {
                 set_buffer_event_handler(&buffer_event);
               
-                adc_init();
+                adc_init(0);
                 adc_start(&pcm_buffer[0], &pcm_buffer[PCM_BUFFER_SIZE], PCM_BUFFER_SIZE);
             }
             else if(strncmp_P(command, PSTR("rec"), 3) == 0)
             {
                 record(0, 64);
+            }
+            else if(strncmp_P(command, PSTR("recslot "), 8) == 0)
+            {
+                command += 9;
+                if(command[0] == '\0')
+                    continue;
+
+                uint32_t slot = strtolong(command);
+                //record_slot((uint8_t)slot);
             }
             else if(strncmp_P(command, PSTR("erase"), 5) == 0)
             {

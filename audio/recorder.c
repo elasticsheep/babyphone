@@ -43,9 +43,11 @@
 ******************************************************************************/
 struct {
   t_recorder_notify_eof notify_eof;
+  uint32_t start_sector;
   uint32_t current_sector;
   uint32_t end_sector;
   uint8_t eof;
+  uint8_t loop_mode;
 } recorder;
 
 /*****************************************************************************
@@ -60,13 +62,16 @@ void buffer_full_handler(void);
 void recorder_start(uint32_t start_sector, uint16_t nb_sectors, t_recorder_notify_eof notify_eof)
 {
   /* Init the recorder context */
+  recorder.start_sector = start_sector;
   recorder.current_sector = start_sector;
   recorder.end_sector = start_sector + nb_sectors;
   recorder.notify_eof = notify_eof;
   recorder.eof = 0;
   
+  recorder.loop_mode = 0;
+  
   /* Init the ADC */
-  adc_init();
+  adc_init(1);
 
   /* Set the buffer event handler */
   set_buffer_event_handler(&buffer_full_handler);
@@ -117,14 +122,21 @@ void buffer_full_handler(void)
       /* Detect end of file */
       if ((recorder.eof == 0) && (recorder.current_sector >= recorder.end_sector))
       {
-        recorder.eof = 1;
-        
-        /* Stop the adc */
-        adc_stop();
+        if (recorder.loop_mode)
+        {
+          recorder.current_sector = recorder.start_sector;
+        }
+        else
+        {
+          recorder.eof = 1;
 
-        /* Notify the client */
-        if (recorder.notify_eof)
-          recorder.notify_eof();
+          /* Stop the adc */
+          adc_stop();
+
+          /* Notify the client */
+          if (recorder.notify_eof)
+            recorder.notify_eof();
+        }
       }
       
       //printf("\r\n");

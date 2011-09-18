@@ -65,27 +65,23 @@ volatile uint8_t buffer_full_flag;
 * Functions
 ******************************************************************************/
 
-void adc_init(void)
+void adc_init(uint8_t vad)
 {
   /* Configure a led output for the triggered signal */
+#ifdef __AVR_ATmega32U4__
   DDRD |= _BV(PORTD6);
   PORTD &= ~_BV(PORTD6);
-  
+#elif defined(__AVR_ATmega328P__)
+  DDRB |= _BV(PORTB0);
+  PORTB &= ~_BV(PORTB0);
+#endif
+
   /* Init the context */
   adc.threshold = 64;
   adc.triggered = 0;
   
-  if (adc.threshold == 0)
-    adc.triggered = 1;
-  
-  /* Initialize the ADC on ADC0 */
-  ADCSRA = _BV(ADEN) | _BV(ADPS2) | _BV(ADPS1) | _BV(ADPS0); /* Enable the ADC, prescaler 128 */
-  ADMUX |= _BV(REFS0) | _BV(ADLAR); /* AVCC ref with cap on AREF, left justify, mux on ADC0 */
-
-#ifdef __AVR_ATmega32U4__
-  DDRF  &= ~_BV(PF0); /* Setup ADC0 as an input */
-  DIDR0 |=  _BV(ADC0D); /* Disable the digital input buffer on PF0*/
-#endif
+  if (!vad)
+    adc.triggered = 1; /* Voice activity detection */
 
   /* Init the buffer pool */
   memset(adc_buffer_pool, 0x00, sizeof(adc_buffer_pool));
@@ -95,11 +91,28 @@ void adc_init(void)
 
 void adc_shutdown(void)
 {
+
+}
+
+void adc_enable(void)
+{
+  /* Initialize the ADC on ADC0 */
+  ADCSRA = _BV(ADEN) | _BV(ADPS2) | _BV(ADPS1) | _BV(ADPS0); /* Enable the ADC, prescaler 128 */
+  ADMUX |= _BV(REFS0) | _BV(ADLAR); /* AVCC ref with cap on AREF, left justify, mux on ADC0 */
+
+#ifdef __AVR_ATmega32U4__
+  DDRF  &= ~_BV(PF0); /* Setup ADC0 as an input */
+  DIDR0 |=  _BV(ADC0D); /* Disable the digital input buffer on PF0*/
+#elif defined(__AVR_ATmega328P__)
+  DDRC &= ~_BV(PC0); /* Setup ADC0 as an input */
+  DIDR0 |=  _BV(ADC0D); /* Disable the digital input buffer on PC0*/
+#endif
+}
+
+void adc_disable(void)
+{
   /* Disable the ADC */
   ADCSRA &= _BV(ADEN);
-  
-  /* Disable the led */
-  PORTD &= ~_BV(PORTD6);
 }
 
 void adc_start(uint8_t* buffer0, uint8_t* buffer1, uint16_t size)
@@ -116,6 +129,9 @@ void adc_start(uint8_t* buffer0, uint8_t* buffer1, uint16_t size)
   adc.end_ptr = adc_buffer_pool[0].end;
   
   buffer_full_flag = 0;
+  
+  /* Enable the ADC block */
+  adc_enable();
   
   /* Setup a periodic interrupt to update the sample value */
   set_sample_timer_handler(&adc_timer_handler);
@@ -143,6 +159,16 @@ void adc_stop(void)
 {
   /* Stop the sample timer interrupt */
   TCCR0A = TCCR0B = OCR0A = TIMSK0 = 0;
+  
+  /* Disable the ADC block */
+  adc_disable();
+  
+  /* Disable the led */
+#ifdef __AVR_ATmega32U4__
+  PORTD &= ~_BV(PORTD6);
+#elif defined(__AVR_ATmega328P__)
+  PORTB &= ~_BV(PORTB0);
+#endif
   
   set_sample_timer_handler(NULL);
 }
@@ -175,7 +201,7 @@ void adc_timer_handler(void)
       /* Check for buffer overflow */
       if (buffer_full_flag != 0)
       {
-        //printf("O");
+        printf("O");
         adc_stop();
 
         return;
@@ -209,7 +235,11 @@ void adc_timer_handler(void)
       adc.triggered = 1;
       
       /* Enable the led */
+#ifdef __AVR_ATmega32U4__
       PORTD |= _BV(PORTD6);
+#elif defined(__AVR_ATmega328P__)
+      PORTB |= _BV(PORTB0);
+#endif
     }
   }
 }
