@@ -38,18 +38,8 @@
 # To rebuild project do "make clean" then "make all".
 #----------------------------------------------------------------------------
 
-# HW target:
-# - hw0 = Teensy2 prototype on breadboard
-# - hw1 = ATmega328 final design
-HW ?= hw1
-
 # MCU name
-ifeq ($(HW),hw0)
-MCU = atmega32u4
-endif
-ifeq ($(HW),hw1)
 MCU = atmega328p
-endif
 
 # Target board (see library "Board Types" documentation, USER or blank for projects not requiring
 # LUFA board drivers). If USER is selected, put custom board drivers in a directory called 
@@ -88,14 +78,14 @@ FORMAT = ihex
 
 # Target file name (without extension).
 TARGET_NAME = shell
-TARGET = $(TARGET_NAME)-$(HW)
+TARGET = $(TARGET_NAME)
 
 
 # Object files directory
 #     To put object files in current directory, use a dot (.), do NOT make
 #     this an empty or blank macro!
-OBJDIR = obj-$(HW)
-DEPDIR = dep-$(HW)
+OBJDIR = obj
+DEPDIR = dep
 
 # Root path
 ROOT_PATH = ../..
@@ -132,6 +122,7 @@ SRC = \
       $(APP_PATH)/shell.c    \
       $(APP_PATH)/uart.c     \
       drivers/banks.c        \
+      drivers/keyboard.c     \
       utils/main.c           \
       utils/delay.c
 

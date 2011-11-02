@@ -69,13 +69,8 @@ volatile uint8_t buffer_full_flag;
 void adc_init(uint8_t vad)
 {
   /* Configure a led output for the triggered signal */
-#ifdef __AVR_ATmega32U4__
-  DDRD |= _BV(PORTD6);
-  PORTD &= ~_BV(PORTD6);
-#elif defined(__AVR_ATmega328P__)
   DDRB |= _BV(PORTB0);
   PORTB &= ~_BV(PORTB0);
-#endif
 
   /* Init the context */
   adc.threshold = 64;
@@ -165,11 +160,7 @@ void adc_stop(void)
   adc_disable();
   
   /* Disable the led */
-#ifdef __AVR_ATmega32U4__
-  PORTD &= ~_BV(PORTD6);
-#elif defined(__AVR_ATmega328P__)
   PORTB &= ~_BV(PORTB0);
-#endif
   
   set_sample_timer_handler(NULL);
 }
@@ -236,11 +227,7 @@ void adc_timer_handler(void)
       adc.triggered = 1;
       
       /* Enable the led */
-#ifdef __AVR_ATmega32U4__
-      PORTD |= _BV(PORTD6);
-#elif defined(__AVR_ATmega328P__)
       PORTB |= _BV(PORTB0);
-#endif
     }
   }
 }

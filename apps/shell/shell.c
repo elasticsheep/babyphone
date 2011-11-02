@@ -22,6 +22,8 @@
 #include <stdio.h>
 
 #include "banks.h"
+#include "keyboard.h"
+
 #include "player.h"
 #include "recorder.h"
 
@@ -38,6 +40,30 @@
 ******************************************************************************/
 uint8_t IsPlaying = 0;
 uint8_t IsRecording = 0;
+
+char keycode2char[] =
+{
+  0,
+  '1',
+  '2',
+  '3',
+  '4',
+  '5',
+  '6',
+  '7',
+  '8',
+  '9',
+  '0',
+  '*',
+  '#',
+  'E',
+  'M',
+  'R',
+  'B',
+  'X', // M1
+  'Y', // M2
+  'Z', // M3
+};
 
 /*****************************************************************************
 * Local prototypes
@@ -212,16 +238,6 @@ int application_main()
 
     SerialStream_Init(38400, false);
 
-#if 0
-    /* Blinking led test */
-    while(1)
-    {
-      DDRB |= _BV(0);
-      PORTB ^= _BV(0);
-      delay_ms(500);
-    }
-#endif
-
     player_init();
 
     while(1)
@@ -334,6 +350,36 @@ int application_main()
                 
                 printf("Slot %02i: 0x%04x ", i, start_block);
                 printf("%u/%u\r\n", nb_content_blocks, max_content_blocks);
+              }
+            }
+            else if(strncmp_P(command, PSTR("kbd\0"), 4) == 0)
+            {
+              keyboard_init(2);
+              
+              while(1)
+              {
+                uint8_t event;
+
+                delay_ms(10);
+                keyboard_update(&event);
+
+                if (event & EVENT_KEY_PRESSED)
+                  printf("P %i %c\r\n", event & KEYCODE_MASK, keycode2char[event & KEYCODE_MASK]);
+
+                if (event & EVENT_KEY_RELEASED)
+                  printf(" R %i\r\n", event & KEYCODE_MASK);
+
+                event = 0;
+              }
+            }
+            else if(strncmp_P(command, PSTR("leds\0"), 5) == 0)
+            {
+              /* Blinking led test */
+              DDRB |= _BV(0) | _BV(1);
+              while(1)
+              {
+                PORTB ^= _BV(0) | _BV(1);
+                delay_ms(500);
               }
             }
             else

@@ -36,30 +36,34 @@
 /*****************************************************************************
 * Constants
 ******************************************************************************/
+#if 0
+#define DEBUG
+#endif
+
 #define NB_MATRIX_ROWS (4)
 #define NB_MATRIX_COLS (5)
 
 uint8_t keycode[] =
 {
   /* Row 0 */
-  KEYCODE_1,   // Col 0
-  KEYCODE_2,   // Col 1
-  KEYCODE_3,   // Col 2
-  KEYCODE_ENR, // Col 3
-  KEYCODE_M1,  // Col 4
+  KEYCODE_1,    // Col 0
+  KEYCODE_2,    // Col 1
+  KEYCODE_3,    // Col 2
+  KEYCODE_NONE, // Col 3
+  KEYCODE_M1,   // Col 4
   
   /* Row 1 */
   KEYCODE_4,   // Col 0
   KEYCODE_5,   // Col 1
   KEYCODE_6,   // Col 2
-  KEYCODE_MEM, // Col 3
+  KEYCODE_R,   // Col 3
   KEYCODE_M2,  // Col 4
   
   /* Row 2 */
   KEYCODE_7,   // Col 0
   KEYCODE_8,   // Col 1
   KEYCODE_9,   // Col 2
-  KEYCODE_R,   // Col 3
+  KEYCODE_MEM, // Col 3
   KEYCODE_M3,  // Col 4
 
   /* Row 3 */
@@ -67,12 +71,7 @@ uint8_t keycode[] =
   KEYCODE_0,     // Col 1
   KEYCODE_SHARP, // Col 2
   KEYCODE_BIS,   // Col 3
-  KEYCODE_NONE,  // Col 4
-  
-  /* Row 4 => Non matrix keys */
-  KEYCODE_HF,    // Col 0
-  KEYCODE_SW0,   // Col 1
-  KEYCODE_SW1,   // Col 2
+  KEYCODE_ENR,  // Col 4
 };
 
 /*****************************************************************************
@@ -110,30 +109,24 @@ void keyboard_init(uint8_t debouncing_threshold)
   kbd.threshold = debouncing_threshold;
   
   /* Setup columns: input with pullup */
-  DDRF &= ~_BV(PORTF1); PORTF |= _BV(PORTF1); // Col 0
-  DDRF &= ~_BV(PORTF4); PORTF |= _BV(PORTF4); // Col 1
-  DDRF &= ~_BV(PORTF5); PORTF |= _BV(PORTF5); // Col 2
+  DDRD &= ~(_BV(PORTD2) | _BV(PORTD4) | _BV(PORTD5) | _BV(PORTD6));
+  PORTD |= _BV(PORTD2) | _BV(PORTD4) | _BV(PORTD5) | _BV(PORTD6);
+  DDRC &= ~_BV(PORTC1); PORTC |= _BV(PORTC1);
   
   /* Setup rows: input highZ */
-  DDRF &= ~_BV(PORTF6); PORTF &= ~_BV(PORTF6); // Row 0 
-  DDRF &= ~_BV(PORTF7); PORTF &= ~_BV(PORTF7); // Row 1
-  DDRD &= ~_BV(PORTD7); PORTD &= ~_BV(PORTD7); // Row 2
-  
-  /* Setup non-matrix keys */
-  DDRB &= ~_BV(PORTB4); PORTB |= _BV(PORTB4); // SW 0 with pullup
-  DDRB &= ~_BV(PORTB5); PORTB |= _BV(PORTB5); // SW 1 with pullup
+  DDRC &= ~(_BV(PORTC2) | _BV(PORTC3) | _BV(PORTC4) | _BV(PORTC5));
+  PORTC &= ~(_BV(PORTC2) | _BV(PORTC3) | _BV(PORTC4) | _BV(PORTC5));
 }
 
 uint8_t read_col(uint8_t index)
 {
   switch(index)
   {
-    case 0:
-      return (PINF & _BV(PORTF1)) > 0;
-    case 1:
-      return (PINF & _BV(PORTF4)) > 0;
-    case 2:
-      return (PINF & _BV(PORTF5)) > 0;
+    case 0: return (PIND & _BV(PORTD6)) > 0;
+    case 1: return (PIND & _BV(PORTD5)) > 0;
+    case 2: return (PIND & _BV(PORTD2)) > 0;
+    case 3: return (PIND & _BV(PORTD4)) > 0;
+    case 4: return (PINC & _BV(PORTC1)) > 0;
   }
   
   return 1;
@@ -142,36 +135,24 @@ uint8_t read_col(uint8_t index)
 void select_row(uint8_t index)
 {
   /* Switch row to output low */
-  
   switch(index)
   {
-    case 0:
-      DDRF |= _BV(PORTF6);
-      break;
-    case 1:
-      DDRF |= _BV(PORTF7);
-      break;
-    case 2:
-      DDRD |= _BV(PORTD7);
-      break;
+    case 0: DDRC |= _BV(PORTC2); break;
+    case 1: DDRC |= _BV(PORTC3); break;
+    case 2: DDRC |= _BV(PORTC4); break;
+    case 3: DDRC |= _BV(PORTC5); break;
   }
 }
 
 void deselect_row(uint8_t index)
 {
   /* Go back to input highZ */
-  
   switch(index)
   {
-    case 0:
-      DDRF &= ~_BV(PORTF6);
-      break;
-    case 1:
-      DDRF &= ~_BV(PORTF7);
-      break;
-    case 2:
-      DDRD &= ~_BV(PORTD7);
-      break;
+    case 0: DDRC &= ~_BV(PORTC2); break;
+    case 1: DDRC &= ~_BV(PORTC3); break;
+    case 2: DDRC &= ~_BV(PORTC4); break;
+    case 3: DDRC &= ~_BV(PORTC5); break;
   }
 }
 
@@ -212,40 +193,6 @@ uint8_t matrix_scan_key(uint8_t rawcode)
   return 0;
 }
 
-uint8_t keyboard_scan(void)
-{
-  /* Non matrix keys */
-  if ((PINB & _BV(PORTB4)) == 0)
-    return (4 << 4) | 1;
-
-  if ((PINB & _BV(PORTB5)) == 0)
-    return (4 << 4) | 2;
-
-  /* Matrix keyboard */
-  return matrix_scan();
-}
-
-uint8_t keyboard_scan_key(uint8_t rawcode)
-{
-  /* Non matrix keys */
-  if ((rawcode >> 4) >= 4)
-  {
-    switch(rawcode & 0x0F)
-    {
-      case 1:
-        return ((PINB & _BV(PORTB4)) == 0);
-
-      case 2:
-        return ((PINB & _BV(PORTB5)) == 0);
-    }
-    
-    return 0;
-  }
-
-  /* Matrix keyboard */
-  return matrix_scan_key(rawcode);
-}
-
 uint8_t raw2keycode(uint8_t rawcode)
 {
   uint8_t row = (rawcode >> 4);
@@ -266,7 +213,7 @@ void keyboard_update(uint8_t* event)
   switch(kbd.state)
   {
     case STATE_IDLE:
-      rawcode = keyboard_scan();
+      rawcode = matrix_scan();
       
       if (keycode > 0)
       {
@@ -277,7 +224,7 @@ void keyboard_update(uint8_t* event)
       break;
       
     case STATE_DEBOUNCING:
-      pressed = keyboard_scan_key(kbd.rawcode);
+      pressed = matrix_scan_key(kbd.rawcode);
     
       if (pressed == 0)
       {
@@ -295,7 +242,9 @@ void keyboard_update(uint8_t* event)
         if (kbd.counter >= kbd.threshold)
         {
           /* Key pressed event */
-          //printf("%iP %02x\r\n", kbd.state, kbd.rawcode);
+#ifdef DEBUG
+          printf("%iP %02x\r\n", kbd.state, kbd.rawcode);
+#endif
 
           kbd.state = STATE_PRESSED;
           *event = EVENT_KEY_PRESSED | raw2keycode(kbd.rawcode);
@@ -304,13 +253,15 @@ void keyboard_update(uint8_t* event)
       break;
       
     case STATE_PRESSED:
-      pressed = keyboard_scan_key(kbd.rawcode);
+      pressed = matrix_scan_key(kbd.rawcode);
       //printf("%02x %i\r\n", kbd.rawcode, pressed);
   
       if (pressed == 0)
       {
         /* => Key released */
-        //printf("%i+R %02x\r\n", kbd.state, kbd.rawcode);
+#ifdef DEBUG
+        printf("%iR %02x\r\n", kbd.state, kbd.rawcode);
+#endif
 
         *event = EVENT_KEY_RELEASED | raw2keycode(kbd.rawcode);
     
