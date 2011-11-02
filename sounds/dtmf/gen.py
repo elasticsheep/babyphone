@@ -1,11 +1,6 @@
 #!/usr/bin/python
 
-import sys
-sys.path.append("..")
-
-import bank
-
-KEYCODE_TO_SLOT = [
+SLOTS = [
     "1.wav",
     "2.wav",
     "3.wav",
@@ -20,4 +15,9 @@ KEYCODE_TO_SLOT = [
     "sharp.wav"
 ]
 
-bank.generate("dtmf.bank", KEYCODE_TO_SLOT)
+if __name__ == '__main__':
+    import sys
+    sys.path.append("..")
+    import partition
+    
+    partition.build_partition("dtmf.part", SLOTS)

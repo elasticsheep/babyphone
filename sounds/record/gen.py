@@ -1,7 +1,8 @@
 #!/usr/bin/python
 
-import sys
-sys.path.append("..")
-import bank
+if __name__ == '__main__':
+    import sys
+    sys.path.append("..")
+    import partition
 
-bank.generate_empty_rw_bank("12slots10sec.bank", 12, 156)
+    partition.build_empty_rw_partition("12slots10sec.part", 12, 156)
