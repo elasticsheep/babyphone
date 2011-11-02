@@ -4,11 +4,11 @@ import os
 import struct
 import wave
 
-def generate(name, files, sampling_rate = 0):
+def build_partition(name, files, sampling_rate = 0):
     
     # Compute the size of each file
     entries = []
-    offset = 1 # Start at sector 1 in the bank
+    offset = 1 # Start at sector 1
     for i, f in enumerate(files):
         w = wave.open(f, "r")
         nb_blocks = w.getnframes() / 512
@@ -18,11 +18,11 @@ def generate(name, files, sampling_rate = 0):
         entries.append((offset, nb_blocks, nb_blocks))
         offset += nb_blocks
 
-    # Write the bank content
+    # Write the partition content
     with open(name, "w") as output:
         print "Writing %s..." % name
 
-        # Write the header
+        # Write the partition header
         output.write(struct.pack("BB", 0, 1)) # Version 0, Read-only
         output.write(struct.pack("<H", sampling_rate)) # Sampling rate
         output.write(struct.pack("<LLL", 0, 0, 0)) # Padding
@@ -50,14 +50,14 @@ def generate(name, files, sampling_rate = 0):
         
             w.close()
 
-    # Print the number of blocks in the bank
+    # Print the number of blocks in the partition
     bytes = os.path.getsize(name)
-    print "Bank size: %i blocks" % (bytes / 512)
+    print "Partition size: %i blocks" % (bytes / 512)
 
 
-def generate_empty_rw_bank(name, nb_slots, nb_blocks_by_slot, sampling_rate = 0):
+def build_empty_rw_partition(name, nb_slots, nb_blocks_by_slot, sampling_rate = 0):
     
-    # Write the bank content
+    # Write the partition content
     with open(name, "w") as output:
         print "Writing %s..." % name
 
@@ -86,6 +86,9 @@ def generate_empty_rw_bank(name, nb_slots, nb_blocks_by_slot, sampling_rate = 0)
             for i in range(nb_blocks_by_slot):
                 output.write(empty_block)
 
-    # Print the number of blocks in the bank
+    # Print the number of blocks in the partition
     bytes = os.path.getsize(name)
-    print "Bank size: %i blocks" % (bytes / 512)
+    print "Partition size: %i blocks" % (bytes / 512)
+
+def build_fs(name, partitions):
+    pass
