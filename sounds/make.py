@@ -12,3 +12,5 @@ if __name__ == '__main__':
     import partition
     
     partition.build_image("partitions.bin", PARTITIONS)
+    
+    print "To load the image on a SD card: dd if=<image> of=/dev/diskx bs=512"
