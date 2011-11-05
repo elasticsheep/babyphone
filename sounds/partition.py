@@ -4,7 +4,7 @@ import os
 import struct
 import wave
 
-def build_partition(name, files, sampling_rate = 0):
+def build_fs(name, files, sampling_rate = 0):
     
     # Compute the size of each file
     entries = []
@@ -18,14 +18,15 @@ def build_partition(name, files, sampling_rate = 0):
         entries.append((offset, nb_blocks, nb_blocks))
         offset += nb_blocks
 
-    # Write the partition content
+    # Write the output
     with open(name, "w") as output:
         print "Writing %s..." % name
 
-        # Write the partition header
+        # Write the slotfs header
+        output.write("SLOTFS")
         output.write(struct.pack("BB", 0, 1)) # Version 0, Read-only
         output.write(struct.pack("<H", sampling_rate)) # Sampling rate
-        output.write(struct.pack("<LLL", 0, 0, 0)) # Padding
+        output.write(struct.pack("<HL", 0, 0)) # Padding
 
         # Write the slot entries
         for entry in entries:
@@ -55,16 +56,17 @@ def build_partition(name, files, sampling_rate = 0):
     print "Partition size: %i blocks" % (bytes / 512)
 
 
-def build_empty_rw_partition(name, nb_slots, nb_blocks_by_slot, sampling_rate = 0):
+def build_empty_rw_fs(name, nb_slots, nb_blocks_by_slot, sampling_rate = 0):
     
-    # Write the partition content
+    # Write the output
     with open(name, "w") as output:
         print "Writing %s..." % name
 
-        # Write the header
+        # Write the slotfs header
+        output.write("SLOTFS")
         output.write(struct.pack("BB", 0, 0)) # Version 0, Read-Write
-        output.write(struct.pack("<H", 0)) # Default sampling rate
-        output.write(struct.pack("<LLL", 0, 0, 0)) # Padding
+        output.write(struct.pack("<H", sampling_rate)) # Sampling rate
+        output.write(struct.pack("<HL", 0, 0)) # Padding
 
         # Write the slot entries
         offset = 1
