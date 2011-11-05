@@ -53,7 +53,7 @@ def build_fs(name, files, sampling_rate = 0):
 
     # Print the number of blocks in the partition
     bytes = os.path.getsize(name)
-    print "Partition size: %i blocks" % (bytes / 512)
+    print "Slotfs size: %i blocks" % (bytes / 512)
 
 
 def build_empty_rw_fs(name, nb_slots, nb_blocks_by_slot, sampling_rate = 0):
@@ -90,7 +90,7 @@ def build_empty_rw_fs(name, nb_slots, nb_blocks_by_slot, sampling_rate = 0):
 
     # Print the number of blocks in the partition
     bytes = os.path.getsize(name)
-    print "Partition size: %i blocks" % (bytes / 512)
+    print "Slotfs size: %i blocks" % (bytes / 512)
 
 def build_image(name, partitions):
     
@@ -104,9 +104,13 @@ def build_image(name, partitions):
         entries.append((offset, nb_blocks))
         offset += nb_blocks
 
-    # Write the file system image
+    # Write the image
     with open(name, "w") as output:
         print "Writing %s..." % name
+
+        # Write the partition table header
+        output.write("PARTITIONS")
+        output.write(struct.pack("<HL", 0, 0)) # Padding
 
         # Write the partition table
         for entry in entries:
@@ -131,4 +135,4 @@ def build_image(name, partitions):
 
     # Print the number of blocks in the file system image
     bytes = os.path.getsize(name)
-    print "File system size: %i blocks" % (bytes / 512)
+    print "Image size: %i blocks" % (bytes / 512)

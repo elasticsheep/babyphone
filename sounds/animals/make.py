@@ -18,6 +18,6 @@ SLOTS = [
 if __name__ == '__main__':
     import sys
     sys.path.append("..")
-    import partition
+    import slotfs
     
-    partition.build_partition("animals.part", SLOTS)
+    slotfs.build_fs("animals.slotfs", SLOTS, sampling_rate=16000)
