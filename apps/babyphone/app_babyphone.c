@@ -29,6 +29,7 @@
 #include <avr/power.h>
 #include <avr/sleep.h>
 #include <avr/interrupt.h>
+#include <avr/eeprom.h> 
 
 #include "player.h"
 #include "recorder.h"
@@ -76,6 +77,8 @@ volatile struct {
   uint8_t media_event_flag;
   uint8_t media_event;
 } app;
+
+uint8_t EEMEM NonVolatilePartition; 
 
 /*****************************************************************************
 * Function prototypes
@@ -166,7 +169,11 @@ void action_select_partition(uint8_t partition)
   if (app.partition >= slotfs_get_nb_partitions())
     app.partition = 0;
 
+  /* Use the new value */
   app.partition = partition;
+  
+  /* Update the EEPROM */
+  eeprom_write_byte(&NonVolatilePartition, app.partition);
     
   printf_P(PSTR("Switch to partition %u\r\n"), app.partition);
 }
@@ -381,6 +388,16 @@ void set_next_state(uint8_t next_state)
   }
 }
 
+void init_from_eeprom(void)
+{
+  uint8_t partition = eeprom_read_byte(&NonVolatilePartition);
+  
+  if (partition > 3)
+    app.partition = 0;
+  else
+    app.partition = partition;
+}
+
 int application_main(void)
 {
   hardware_init();
@@ -397,11 +414,13 @@ int application_main(void)
   /* Init the application state */
   app.state = STATE_IDLE;
   app.partition = 0;
-  
+
   app.key_event_flag = 0;
   app.key_event = 0;
   app.media_event_flag = 0;
   app.media_event = 0;
+  
+  init_from_eeprom();
 
   /* Mainloop */
   while(1)
