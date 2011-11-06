@@ -21,9 +21,12 @@
 
 #include <stdio.h>
 
-#include "slotfs.h"
+/* Drivers */
 #include "keyboard.h"
+#include "leds.h"
+#include "slotfs.h"
 
+/* Audio */
 #include "player.h"
 #include "recorder.h"
 
@@ -116,7 +119,7 @@ void play_slot(uint8_t partition, uint8_t slot)
   
   IsPlaying = 1;
 
-  /* Read content position and size */
+  /* Read content info */
   slotfs_get_partition_info(partition, &sampling_rate, NULL);
   slotfs_get_slot_info(partition, slot, &start_block, NULL, &content_blocks);
 
@@ -407,10 +410,16 @@ int application_main()
             {
               /* Blinking led test */
               
-              DDRB |= _BV(0) | _BV(1);
+              leds_init();
               while(1)
               {
-                PORTB ^= _BV(0) | _BV(1);
+                leds_set(LED_RED, 1);
+                delay_ms(250);
+                leds_set(LED_RED, 0);
+                delay_ms(250);
+                leds_set(LED_GREEN, 1);
+                delay_ms(500);
+                leds_set(LED_GREEN, 0);
                 delay_ms(500);
               }
             }

@@ -33,17 +33,18 @@
 #include "player.h"
 #include "recorder.h"
 
-#include "keyboard.h"
-#include "delay.h"
 #include "sd_raw.h"
-#include "LUFA/Drivers/Peripheral/SerialStream.h"
+#include "keyboard.h"
+#include "leds.h"
+#include "slotfs.h"
 
-#include "slots.h"
+#include "delay.h"
+#include "LUFA/Drivers/Peripheral/SerialStream.h"
 
 /*****************************************************************************
 * Constants
 ******************************************************************************/
-enum {
+enum state {
   STATE_IDLE,
   STATE_RECORD_SELECT_SLOT,
   STATE_PLAYING,
@@ -52,7 +53,7 @@ enum {
   STATE_SAME = 0xFF,
 };
 
-enum {
+enum event {
   EVENT_NONE,
   EVENT_END_OF_RECORD,
   EVENT_END_OF_PLAYBACK,
@@ -67,7 +68,7 @@ enum {
 ******************************************************************************/
 volatile struct {
   uint8_t state;
-  uint8_t bank;
+  uint8_t partition;
   
   uint8_t key_event_flag;
   uint8_t key_event;
@@ -94,21 +95,9 @@ void stop_all(void)
       break;
       
     case STATE_RECORDING:
-      recorder_stop();
+      recorder_stop(NULL);
       break;
   }
-}
-
-void init_leds(void)
-{
-  /* Teensy onboard led */
-  DDRD |= _BV(PORTD6);
-  PORTD &= ~_BV(PORTD6);
-}
-
-void onboard_led_toggle(void)
-{
-  PORTD ^= _BV(PORTD6);
 }
 
 void init_keyboard_polling(void)
@@ -164,8 +153,7 @@ void hardware_init(void)
     printf_P(PSTR("MMC/SD initialization failed\n"));
   }
   
-  init_leds();
-  
+  leds_init();
   keyboard_init(2);
   init_keyboard_polling();
   
@@ -173,14 +161,14 @@ void hardware_init(void)
   sei();
 }
 
-void action_next_bank(void)
+void action_select_partition(uint8_t partition)
 {
-  if (app.bank >= get_nb_banks())
-    app.bank = 0;
-  else
-    app.bank++;
+  if (app.partition >= slotfs_get_nb_partitions())
+    app.partition = 0;
+
+  app.partition = partition;
     
-  printf("Switch to bank %u\r\n", app.bank);
+  printf_P(PSTR("Switch to partition %u\r\n"), app.partition);
 }
 
 void end_of_record(void)
@@ -199,13 +187,13 @@ void action_start_record(uint8_t slot)
     stop_all();
   
   /* Start the recording */
-  printf("start block = %lu\r\n", get_start_block(app.bank, slot));
-  recorder_start(get_start_block(app.bank, slot), 64, &end_of_record);
+  //printf("start block = %lu\r\n", get_start_block(app.bank, slot));
+  //recorder_start(get_start_block(app.bank, slot), 64, &end_of_record);
 }
 
 void action_stop_record(void)
 {
-  recorder_stop();
+  //recorder_stop();
   
   printf("Record stopped.\r\n");
 }
@@ -218,21 +206,24 @@ void end_of_playback(void)
   app.media_event_flag = 1;
 }
 
-void action_start_play(uint8_t slot)
+void action_start_play(uint8_t partition, uint8_t slot)
 {
-  uint32_t start_block, content_blocks;
+  uint32_t start_block;
+  uint16_t content_blocks;
   uint16_t sampling_rate = 0;
   
   if (app.state != STATE_IDLE)
     stop_all();
 
-  /* Read content position and size */
-  read_bank(app.bank, &sampling_rate);
-  read_bank_slot(app.bank, slot, &start_block, &content_blocks);
-  
-  printf("Bank sampling rate = %u\r\n", sampling_rate);
-  printf("Start block = %lu\r\n", start_block);
-  printf("Content blocks = %lu\r\n", content_blocks);
+  printf_P(PSTR("Play partition %u slot %u\r\n"), partition, slot);
+
+  /* Read content info */
+  slotfs_get_partition_info(partition, &sampling_rate, NULL);
+  slotfs_get_slot_info(partition, slot, &start_block, NULL, &content_blocks);
+
+  printf_P(PSTR("Sampling rate = %u\r\n"), sampling_rate);
+  printf_P(PSTR("Start block = %lu\r\n"), start_block);
+  printf_P(PSTR("Content blocks = %u\r\n"), content_blocks);
 
   if (content_blocks > 0)
   {
@@ -263,15 +254,14 @@ uint8_t handle_idle_state(void)
 
       switch(keycode)
       {
-        case KEYCODE_SW0:
-          action_next_bank();
+        case KEYCODE_M1:
+          action_select_partition(0);
           next_state = STATE_SAME;
           break;
           
-        case KEYCODE_SW1:
-          printf("Wait for slot selection...\r\n");
-          PORTD |= _BV(PORTD6);
-          next_state = STATE_RECORD_SELECT_SLOT;
+        case KEYCODE_M2:
+          action_select_partition(1);
+          next_state = STATE_SAME;
           break;
           
         case KEYCODE_1:
@@ -286,7 +276,7 @@ uint8_t handle_idle_state(void)
         case KEYCODE_STAR:
         case KEYCODE_0:
         case KEYCODE_SHARP:
-          action_start_play(keycode - KEYCODE_1);
+          action_start_play(app.partition, keycode - KEYCODE_1);
           next_state = STATE_PLAYING;
           break;
       }
@@ -366,7 +356,7 @@ uint8_t handle_recording(void)
   
   if (app.media_event_flag)
   {
-    recorder_stop();
+    recorder_stop(NULL);
     return STATE_IDLE;
   }
   
@@ -395,21 +385,21 @@ int application_main(void)
 {
   hardware_init();
 
-  /* Reset the content banks */
-  //printf("Reset banks... ");
-  //reset_banks();
-  //printf("OK\r\n");
+  /* Init the filesystem */
+  slotfs_init();
 
   /* Init the player */
   player_init();
 
+  /* Switch on the green led */
+  leds_set(LED_GREEN, 1);
+
   /* Init the application state */
   app.state = STATE_IDLE;
-  app.bank = 0;
+  app.partition = 0;
   
   app.key_event_flag = 0;
   app.key_event = 0;
-
   app.media_event_flag = 0;
   app.media_event = 0;
 

@@ -39,13 +39,13 @@
 #----------------------------------------------------------------------------
 
 # MCU name
-MCU = atmega32u4
+MCU = atmega328p
 
 
 # Target board (see library "Board Types" documentation, USER or blank for projects not requiring
 # LUFA board drivers). If USER is selected, put custom board drivers in a directory called 
 # "Board" inside the application directory.
-BOARD  = TEENSY2
+BOARD  = USER
 
 
 # Processor frequency.
@@ -120,8 +120,9 @@ AUDIO_SRC = \
 APP_PATH = apps/babyphone
 SRC = \
       $(APP_PATH)/app_babyphone.c  \
-      $(APP_PATH)/slots.c          \
-      driver/keyboard.c            \
+      drivers/keyboard.c           \
+      drivers/leds.c               \
+      drivers/slotfs.c             \
       utils/main.c                 \
       utils/delay.c
 
@@ -160,7 +161,7 @@ EXTRAINCDIRS = \
     $(ROOT_PATH)/$(LUFA_PATH)/       \
     $(ROOT_PATH)/$(SD_READER_PATH)/  \
     $(ROOT_PATH)/$(AUDIO_PATH)/      \
-    $(ROOT_PATH)/driver              \
+    $(ROOT_PATH)/drivers             \
     $(ROOT_PATH)/utils
 
 
