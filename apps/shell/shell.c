@@ -21,7 +21,7 @@
 
 #include <stdio.h>
 
-#include "banks.h"
+#include "slotfs.h"
 #include "keyboard.h"
 
 #include "player.h"
@@ -105,7 +105,7 @@ void play(uint32_t start_sector, uint16_t nb_sectors)
   player_start(start_sector, nb_sectors, &end_of_playback);
 }
 
-void play_slot(uint8_t slot)
+void play_slot(uint8_t partition, uint8_t slot)
 {
   uint32_t start_block;
   uint16_t content_blocks;
@@ -117,10 +117,10 @@ void play_slot(uint8_t slot)
   IsPlaying = 1;
 
   /* Read content position and size */
-  bank_read(0, &sampling_rate);
-  bank_read_slot(0, slot, &start_block, NULL, &content_blocks);
+  slotfs_get_partition_info(partition, &sampling_rate, NULL);
+  slotfs_get_slot_info(partition, slot, &start_block, NULL, &content_blocks);
 
-  printf("Bank sampling rate = %u\r\n", sampling_rate);
+  printf("Sampling rate = %u\r\n", sampling_rate);
   printf("Start block = %lu\r\n", start_block);
   printf("Content blocks = %u\r\n", content_blocks);
 
@@ -152,7 +152,7 @@ void end_of_record(void* opaque)
   printf("Written blocks = %u\r\n", nb_written_blocks);
   
   /* Update the slot header */
-  bank_write_slot_content_size(0, (uint8_t)opaque, nb_written_blocks);
+  slotfs_update_slot_content_size(2, (uint8_t)opaque, nb_written_blocks);
 }
 
 void record(uint32_t start_sector, uint16_t nb_sectors)
@@ -173,6 +173,8 @@ void record_slot(uint8_t slot)
   uint32_t start_block;
   uint16_t max_content_blocks;
   uint16_t sampling_rate = 0;
+  
+  uint8_t partition = 2;
 
   if (IsRecording)
     recorder_stop(NULL);
@@ -180,10 +182,10 @@ void record_slot(uint8_t slot)
   IsRecording = 1;
 
   /* Read content position and max size */
-  bank_read(0, &sampling_rate);
-  bank_read_slot(0, slot, &start_block, &max_content_blocks, NULL);
+  slotfs_get_partition_info(partition, &sampling_rate, NULL);
+  slotfs_get_slot_info(partition, slot, &start_block, &max_content_blocks, NULL);
 
-  printf("Bank sampling rate = %u\r\n", sampling_rate);
+  printf("Sampling rate = %u\r\n", sampling_rate);
   printf("Start block = %lu\r\n", start_block);
   printf("Max content blocks = %u\r\n", max_content_blocks);
 
@@ -238,8 +240,6 @@ int application_main()
 
     SerialStream_Init(38400, false);
 
-    player_init();
-
     while(1)
     {
         /* setup sd card slot */
@@ -248,6 +248,14 @@ int application_main()
             uart_puts_p(PSTR("MMC/SD initialization failed\n"));
             continue;
         }
+
+        if(!slotfs_init())
+        {
+            uart_puts_p(PSTR("SlotFS initialization failed\n"));
+            continue;
+        }
+        
+        player_init();
 
         /* provide a simple shell */
         char buffer[24];
@@ -269,91 +277,114 @@ int application_main()
             }
             else if(strncmp_P(command, PSTR("rawadc"), 3) == 0)
             {
-                /* Initialize the ADC on ADC0 */
-                ADCSRA = _BV(ADEN) | _BV(ADPS2) | _BV(ADPS1) | _BV(ADPS0); /* Enable the ADC, prescaler 128 */
-                ADMUX |= _BV(REFS0) | _BV(ADLAR); /* AVCC ref with cap on AREF, left justify, mux on ADC0 */
+              /* Initialize the ADC on ADC0 */
+              ADCSRA = _BV(ADEN) | _BV(ADPS2) | _BV(ADPS1) | _BV(ADPS0); /* Enable the ADC, prescaler 128 */
+              ADMUX |= _BV(REFS0) | _BV(ADLAR); /* AVCC ref with cap on AREF, left justify, mux on ADC0 */
 
 #ifdef __AVR_ATmega32U4__
-                DDRF  &= ~_BV(PF0); /* Setup ADC0 as an input */
-                DIDR0 |=  _BV(ADC0D); /* Disable the digital input buffer on PF0*/
+              DDRF  &= ~_BV(PF0); /* Setup ADC0 as an input */
+              DIDR0 |=  _BV(ADC0D); /* Disable the digital input buffer on PF0*/
 #elif defined(__AVR_ATmega328P__)
-                DDRC &= ~_BV(PC0); /* Setup ADC0 as an input */
-                DIDR0 |=  _BV(ADC0D); /* Disable the digital input buffer on PC0*/
+              DDRC &= ~_BV(PC0); /* Setup ADC0 as an input */
+              DIDR0 |=  _BV(ADC0D); /* Disable the digital input buffer on PC0*/
 #endif
-                while(1)
-                {
-                    /* Start a conversion */
-                    ADCSRA |= _BV(ADSC);
+              while(1)
+              {
+                /* Start a conversion */
+                ADCSRA |= _BV(ADSC);
 
-                    /* Wait for the end of the conversion */
-                    while (ADCSRA & _BV(ADSC));
+                /* Wait for the end of the conversion */
+                while (ADCSRA & _BV(ADSC));
 
-                    /* Clear the interrupt flag */
-                    ADCSRA |= _BV(ADIF); 
+                /* Clear the interrupt flag */
+                ADCSRA |= _BV(ADIF); 
 
-                    /* Print the sampled value */
-                    printf_P(PSTR("%i\r\n"), ADCH);
-                }
+                /* Print the sampled value */
+                printf_P(PSTR("%i\r\n"), ADCH);
+              }
             }
             else if(strncmp_P(command, PSTR("adc"), 3) == 0)
             {
-                set_buffer_event_handler(&buffer_event);
-              
-                adc_init(0);
-                adc_start(&pcm_buffer[0], &pcm_buffer[PCM_BUFFER_SIZE], PCM_BUFFER_SIZE);
+              set_buffer_event_handler(&buffer_event);
+            
+              adc_init(0);
+              adc_start(&pcm_buffer[0], &pcm_buffer[PCM_BUFFER_SIZE], PCM_BUFFER_SIZE);
             }
             else if(strncmp_P(command, PSTR("rec\0"), 4) == 0)
             {
-                record(0, 64);
+              record(0, 64);
             }
             else if(strncmp_P(command, PSTR("recslot "), 8) == 0)
             {
-                command += 8;
-                if(command[0] == '\0')
-                    continue;
+              command += 8;
+              if(command[0] == '\0')
+                continue;
 
-                uint32_t slot = strtolong(command);
-                record_slot((uint8_t)slot);
+              uint32_t slot = strtolong(command);
+              record_slot((uint8_t)slot);
             }
             else if(strncmp_P(command, PSTR("erase"), 5) == 0)
             {
-                erase(0, 64);
+              erase(0, 64);
             }
             else if(strncmp_P(command, PSTR("fill"), 4) == 0)
             {
-                fill(0, 128);
+              fill(0, 128);
             }
             else if(strncmp_P(command, PSTR("play\0"), 5) == 0)
             {
-                play(0, 64);
+              play(0, 64);
             }
             else if(strncmp_P(command, PSTR("playslot "), 9) == 0)
             {
-                command += 9;
-                if(command[0] == '\0')
-                    continue;
+              command += 9;
+              if(command[0] == '\0')
+                  continue;
 
-                uint32_t slot = strtolong(command);
-                play_slot((uint8_t)slot);
+              uint32_t slot = strtolong(command);
+              play_slot(1, (uint8_t)slot);
             }
             else if(strncmp_P(command, PSTR("ls\0"), 3) == 0)
             {
+              /* Display the partitions content */
               uint8_t i;
-              uint32_t start_block;
-              uint16_t max_content_blocks;
-              uint16_t nb_content_blocks;
-              
-              printf("Bank 0\r\n");
-              for(i = 0; i < 20; i++)
+              uint8_t nb_partitions;
+            
+              nb_partitions = slotfs_get_nb_partitions();
+              printf_P(PSTR("%i partitions\r\n"), nb_partitions);
+            
+              for(i = 0; i < nb_partitions; i++)
               {
-                bank_read_slot(0, i, &start_block, &max_content_blocks, &nb_content_blocks);
+                uint8_t j;
+                uint16_t sampling_rate = 0;
+                uint8_t nb_slots;
+                uint32_t start_block;
+                uint16_t max_content_blocks;
+                uint16_t nb_content_blocks;
                 
-                printf("Slot %02i: 0x%04x ", i, start_block);
-                printf("%u/%u\r\n", nb_content_blocks, max_content_blocks);
+                printf_P(PSTR("Partition %u\r\n"), i);
+                  
+                slotfs_get_partition_info(i, &sampling_rate, &nb_slots);
+                printf_P(PSTR("%u slots\r\n"), nb_slots);
+                
+                if (sampling_rate == 0)
+                  printf_P(PSTR("8000 Hz\r\n"));
+                else
+                  printf_P(PSTR("%u Hz\r\n"), sampling_rate);
+                  
+                for(j = 0; j< nb_slots; j++)
+                {
+                  slotfs_get_slot_info(i, j, &start_block, &max_content_blocks, &nb_content_blocks);
+
+                  printf("Slot %02i: %4lu ", j, start_block);
+                  printf("%u/%u\r\n", nb_content_blocks, max_content_blocks);
+                }
               }
             }
             else if(strncmp_P(command, PSTR("kbd\0"), 4) == 0)
             {
+              /* Matrix keyboad test loop */
+              
               keyboard_init(2);
               
               while(1)
@@ -375,6 +406,7 @@ int application_main()
             else if(strncmp_P(command, PSTR("leds\0"), 5) == 0)
             {
               /* Blinking led test */
+              
               DDRB |= _BV(0) | _BV(1);
               while(1)
               {
@@ -384,9 +416,9 @@ int application_main()
             }
             else
             {
-                uart_puts_p(PSTR("unknown command: "));
-                uart_puts(command);
-                uart_putc('\n');
+              uart_puts_p(PSTR("unknown command: "));
+              uart_puts(command);
+              uart_putc('\n');
             }
         }
     }

@@ -121,7 +121,7 @@ APP_PATH = apps/$(TARGET_NAME)
 SRC = \
       $(APP_PATH)/shell.c    \
       $(APP_PATH)/uart.c     \
-      drivers/banks.c        \
+      drivers/slotfs.c       \
       drivers/keyboard.c     \
       utils/main.c           \
       utils/delay.c

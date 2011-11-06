@@ -20,13 +20,12 @@
   this software.
 */
 
-uint32_t get_nb_banks(void);
-uint32_t get_start_block(uint8_t bank, uint8_t slot);
-uint32_t get_content_blocks(uint8_t bank, uint8_t slot);
+uint8_t slotfs_init(void);
 
-void bank_read(uint8_t bank, uint16_t *sampling_rate);
-void bank_read_slot(uint8_t bank, uint8_t slot, uint32_t *start_block, uint16_t *max_content_blocks, uint16_t *nb_content_blocks);
+uint32_t slotfs_get_nb_partitions(void);
+uint32_t slotfs_get_partition_start(uint8_t partition);
 
-void bank_write_slot_content_size(uint8_t bank, uint8_t slot, uint16_t nb_content_blocks);
+void slotfs_get_partition_info(uint8_t partition, uint16_t *sampling_rate, uint8_t* nb_slots);
+void slotfs_get_slot_info(uint8_t partition, uint8_t slot, uint32_t *start_block, uint16_t *max_content_blocks, uint16_t *nb_slot_blocks);
 
-void reset_banks(void);
+void slotfs_update_slot_content_size(uint8_t partition, uint8_t slot, uint16_t nb_content_blocks);

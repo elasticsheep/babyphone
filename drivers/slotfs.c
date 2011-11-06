@@ -29,17 +29,12 @@
 #include <avr/pgmspace.h>
 
 #include "sd_raw.h"
-#include "buffer.h"
 
 /*****************************************************************************
 * Constants
 ******************************************************************************/
-#define NB_BANKS (3)
-
-#define SLOT_NB_BLOCKS (64)
-#define BANK_NB_SLOTS  (9)
-
-#define BANK_SIZE      (1 + BANK_NB_SLOTS * SLOT_NB_BLOCKS)
+#define MAX_PARTITIONS (3)  /* Max in partition table = 62 */
+#define MAX_SLOTS      (12) /* Max in partition header = 62 */
 
 /*****************************************************************************
 * Definitions
@@ -49,6 +44,11 @@
 * Globals
 ******************************************************************************/
 
+struct {
+  uint8_t no_partitions;
+  uint8_t nb_partitions;
+} slotfs;
+
 /*****************************************************************************
 * Local prototypes
 ******************************************************************************/
@@ -57,93 +57,137 @@
 * Functions
 ******************************************************************************/
 
-uint32_t get_nb_banks(void)
+uint8_t slotfs_init(void)
 {
-  return NB_BANKS;
-}
-
-uint32_t get_bank_start(uint8_t bank)
-{
-  return 0; // Bank 0 only
-}
-
-uint32_t get_start_block(uint8_t bank, uint8_t slot)
-{
-  return BANK_SIZE * bank + 1 + (slot * SLOT_NB_BLOCKS);
-}
-
-uint32_t get_content_blocks(uint8_t bank, uint8_t slot)
-{
-  uint32_t content_size;
-  uint32_t rd_address = (BANK_SIZE * (uint32_t)bank) * 512 + 4 * (uint32_t)slot;
+  char buffer[10 + 1];
+  uint32_t nb_bytes = 0;
   
-  printf("0x%08lx\r\n", rd_address);
-  sd_raw_read(rd_address, (uint8_t*)&content_size, 4);
+  memset(&slotfs, 0x00, sizeof(slotfs));
   
-  if ((content_size > 0) && (content_size <= SLOT_NB_BLOCKS))
-    return content_size;
-    
-  return SLOT_NB_BLOCKS;
-}
-
-void write_content_size(uint8_t bank, uint8_t slot, uint32_t content_size)
-{
-  uint32_t wr_address = (BANK_SIZE * (uint32_t)bank) * 512 + 4 * (uint32_t)slot;
+  printf_P(PSTR("slotfs_init\r\n"));
   
-  sd_raw_write(wr_address, (const uint8_t*)&content_size, 4);
-  sd_raw_sync();
-}
-
-void reset_banks(void)
-{
-  uint32_t i;
-  
-  memset(pcm_buffer, 0x00, PCM_BUFFER_SIZE);
-  
-  for(i= 0; i < (BANK_SIZE * NB_BANKS); i++)
+  nb_bytes = sd_raw_read(0, (uint8_t*)buffer, 10);
+  if (strncmp(buffer, "SLOTFS", 6) == 0)
   {
-    uint32_t wr_address = i * 512;
-    printf("0x%08lx\r\n", wr_address);
-    sd_raw_write(wr_address, pcm_buffer, 512);
+    printf_P(PSTR("SLOTFS\r\n"));
+    
+    /* Only one slotfs, without partition */
+    slotfs.no_partitions = 1;
+  }
+  else if (strncmp(buffer, "PARTITIONS", 10) == 0)
+  {
+    uint8_t i;
+    uint32_t start_block;
+
+    printf_P(PSTR("PARTITIONS\r\n"));
+        
+    slotfs.no_partitions = 0;
+        
+    /* Read the partition table */
+    for(i = 0; i < MAX_PARTITIONS; i++)
+    {
+      sd_raw_read(16 + i * 8, (uint8_t*)&start_block, 4);
+      
+      if(start_block == 0)
+      {
+        slotfs.nb_partitions = i;
+        break;
+      }
+      else
+      {
+        printf_P(PSTR("Partition %i start %li\r\n"), i, start_block);
+      }
+    }
+  }
+  else
+  {
+    return 0;
+  }
+  
+  return 1;
+}
+
+uint32_t slotfs_get_nb_partitions(void)
+{
+  if (slotfs.no_partitions == 1)
+  {
+    return 1;
+  }
+  
+  return slotfs.nb_partitions;
+}
+
+uint32_t slotfs_get_partition_start(uint8_t partition)
+{
+  uint32_t start_block;
+  
+  if (slotfs.no_partitions == 1)
+  {
+    return 0;
+  }
+
+  /* Read the partition table */
+  sd_raw_read(16 + partition * 8, (uint8_t*)&start_block, 4);
+  
+  return start_block;
+}
+
+void slotfs_get_partition_info(uint8_t partition, uint16_t *sampling_rate, uint8_t* nb_slots)
+{
+  uint8_t i;
+  uint32_t partition_address = slotfs_get_partition_start(partition) * 512;
+  uint32_t start_block;
+  
+  if (sampling_rate)
+  {
+    sd_raw_read(partition_address + 8, (uint8_t*)sampling_rate, 2);
+  }
+  
+  if (nb_slots)
+  {
+    for(i = 0; i < MAX_SLOTS; i++)
+    {
+      sd_raw_read(partition_address + 16 + i * 8, (uint8_t*)&start_block, 4);
+      
+      if(start_block == 0)
+      {
+        *nb_slots = i;
+        break;
+      }
+#ifdef DEBUG
+      else
+      {
+        printf_P(PSTR("Slot %i start %li\r\n"), i, start_block);
+      }
+#endif
+    }
   }
 }
 
-void bank_read(uint8_t bank, uint16_t *sampling_rate)
+void slotfs_get_slot_info(uint8_t partition, uint8_t slot, uint32_t *start_block, uint16_t *max_content_blocks, uint16_t *nb_slot_blocks)
 {
-  uint32_t bank_offset = 0;
-  uint32_t rd_address = (bank_offset << 9);
-  
-  if (sampling_rate)
-    sd_raw_read(rd_address + 2, (uint8_t*)sampling_rate, 2);
-}
-
-void bank_read_slot(uint8_t bank, uint8_t slot, uint32_t *start_block, uint16_t *max_content_blocks, uint16_t *nb_content_blocks)
-{
-  uint32_t bank_offset = 0;
-  uint32_t rd_address = (bank_offset << 9) + 16 + (slot * 8);
-  uint32_t slot_offset;
+  uint32_t partition_address = slotfs_get_partition_start(partition) * 512;
+  uint32_t slot_entry_address = partition_address + 16 + slot * 8;
+  uint32_t slot_offset = 0;
   
   if (start_block)
   {
-    sd_raw_read(rd_address, (uint8_t*)&slot_offset, 4);
-    *start_block = bank_offset + slot_offset;
+    sd_raw_read(slot_entry_address, (uint8_t*)&slot_offset, 4);
+    *start_block = slotfs_get_partition_start(partition) + slot_offset;
   }
   
   if (max_content_blocks)
-    sd_raw_read(rd_address + 4, (uint8_t*)max_content_blocks, 2);
+    sd_raw_read(slot_entry_address + 4, (uint8_t*)max_content_blocks, 2);
   
-  if (nb_content_blocks)
-    sd_raw_read(rd_address + 6, (uint8_t*)nb_content_blocks, 2);
+  if (nb_slot_blocks)
+    sd_raw_read(slot_entry_address + 6, (uint8_t*)nb_slot_blocks, 2);
 }
 
-void bank_write_slot_content_size(uint8_t bank, uint8_t slot, uint16_t nb_content_blocks)
+void slotfs_update_slot_content_size(uint8_t partition, uint8_t slot, uint16_t nb_content_blocks)
 {
-  uint32_t bank_offset = 0;
-  uint32_t rd_address = (bank_offset << 9) + 16 + (slot * 8);
-  uint32_t slot_offset;
-  
-  printf("%i\r\n", nb_content_blocks);
-  
-  sd_raw_write(rd_address + 6, (uint8_t*)&nb_content_blocks, 2);
+  uint32_t partition_address = slotfs_get_partition_start(partition) * 512;
+  uint32_t slot_entry_address = partition_address + 16 + slot * 8;
+
+  sd_raw_write(slot_entry_address + 6, (uint8_t*)&nb_content_blocks, 2);
   sd_raw_sync();
 }
